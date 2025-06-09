@@ -1,0 +1,1 @@
+export type ACTIONS_TYPE = "SELECT" | "RECTANGLE" | "CIRLCE" | "SCRIBBLE" | "ARROW"
