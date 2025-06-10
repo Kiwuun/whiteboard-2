@@ -7,13 +7,13 @@ import { LuPencil } from "react-icons/lu"
 import { GiArrowCursor } from "react-icons/gi"
 import { FaRegCircle } from "react-icons/fa"
 
-import { Stage, Layer, Rect } from "react-konva"
+import { Stage, Layer, Rect, Circle, Line, Transformer } from "react-konva"
 import { useEffect, useRef, useState } from "react"
 import { ACTIONS } from "../types/consts"
 import { ToolButton } from "./tool-button"
 import { v4 as uuid } from "uuid"
 import Konva from "konva"
-import { RectangleStruct } from "../types/typing"
+import { RectangleStruct, CircleStruct, ScribbleStruct } from "../types/typing"
 
 
 // TODO MAKE BUTTON COMPONENT WITH CHILD AND ACTION PROP <BTN>CHILD</BTN>
@@ -21,16 +21,20 @@ import { RectangleStruct } from "../types/typing"
 export const KonvaCanvas = () => {
 
     const stageRef = useRef<Konva.Stage>(null)
+    const transFormerRef = useRef<Konva.Transformer>(null)
     const [action, setAction] = useState(ACTIONS.SELECT)
     const [fillColor, setFillColor] = useState<string>("#ff0000")
     const [windowDimensions, setWindowDimensions] = useState({width: 0, height: 0})
 
-    const strokeColor = "#000"
+    const strokeColor = "#fff"
+    const isDraggable = action === ACTIONS.SELECT
     const isPainting = useRef(false)
     const currentShapeID = useRef<string>(null)
 
     // SHAPES
     const[rectangles, setRectangles] = useState<RectangleStruct[]>([])
+    const[circles, setCircles] = useState<CircleStruct[]>([])
+    const [scribbles, setScribbles] = useState<ScribbleStruct[]>([])
 
     // HANDLE PRELOADING ERROR: WINDOW NOT DEFINED
     useEffect(() => {
@@ -58,7 +62,16 @@ export const KonvaCanvas = () => {
                 setRectangles((rectangles) => [...rectangles, {
                     id, x, y, height: 20, width: 20, fillColor
                 }])
-            break;
+                break;
+            case ACTIONS.CIRCLE:
+                setCircles((circles) => [...circles, {
+                    id, radius: 20, x, y, fillColor
+                }])
+                break;
+            case ACTIONS.SCRIBBLE:
+                setScribbles((scribbles) => [...scribbles, {
+                    id, points: [x, y], fillColor
+                }])
         }
     }
 
@@ -85,7 +98,31 @@ export const KonvaCanvas = () => {
 
                     return rectangle
                 }))
-            break;
+                break;
+            case ACTIONS.CIRCLE:
+                setCircles((circles) => circles.map((circle) => {
+                    if(circle.id === currentShapeID.current) {
+                        return {
+                            ...circle,
+                            radius: ((y - circle.y)** 2 + (x - circle.x) ** 2) ** .5
+                        }
+                    }
+
+                    return circle
+                }))
+                break
+            case ACTIONS.SCRIBBLE:
+                setScribbles((scribbles) =>scribbles.map((scribble) => {
+                    if (scribble.id === currentShapeID.current) {
+                        return {
+                            ...scribble,
+                            points: [...scribble.points, x, y],
+                        };
+                    }
+
+                    return scribble;
+                }))
+                    break;
         }
     }
 
@@ -105,11 +142,19 @@ export const KonvaCanvas = () => {
         document.body.removeChild(link);
     }
 
+    function onClick (e: Konva.KonvaEventObject<MouseEvent>) {
+        if(action != ACTIONS.SELECT) return
+        if(!transFormerRef) return
+        const target = e.currentTarget as unknown as Konva.Node
+        if(!target) return
+        transFormerRef.current!.nodes([target])
+    }
+
     return (
         <>
             <div className="relative w-full h-screen overflow-hidden">
                 <div className="abolute top-0 z-10 w-full py-2">
-                    <div className="flex justify-center items-center gap-3 py-2 px-3 w-fit mx-auto border">
+                    <div className="flex justify-center items-center gap-3 py-2 px-3 w-fit mx-auto border border-">
 
                         <ToolButton setAction={setAction} Action={action} Tool={ACTIONS.SELECT}>
                             <GiArrowCursor size={"2rem"}/>
@@ -157,12 +202,40 @@ export const KonvaCanvas = () => {
                         key={i}
                         x={rectangle.x}
                         y={rectangle.y}
-                        stroke={strokeColor}
                         strokeWidth={2}
                         fill={rectangle.fillColor}
                         height={rectangle.height}
-                        width={rectangle.width}/>
+                        width={rectangle.width}
+                        draggable={isDraggable}
+                        onClick={onClick}/>
                     ))}
+
+                    {circles.map((circle: CircleStruct, i) => (
+                        <Circle
+                        key={i}
+                        x={circle.x}
+                        y={circle.y}
+                        radius={circle.radius}
+                        strokeWidth={2}
+                        fill={circle.fillColor}
+                        draggable={isDraggable}
+                        onClick={onClick}/>
+                    ))}
+
+                    {scribbles.map((scribble: ScribbleStruct, i) => (
+                        <Line
+                        key={i}
+                        lineCap="round"
+                        lineJoin="round"
+                        points={scribble.points}
+                        stroke={strokeColor}
+                        strokeWidth={2}
+                        fill={scribble.fillColor}
+                        draggable={isDraggable}
+                        onClick={onClick}/>
+                    ))}
+
+                    <Transformer ref={transFormerRef}/>
                 </Layer>
             </Stage>
             </div>
