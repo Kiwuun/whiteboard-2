@@ -13,12 +13,13 @@ import { ACTIONS } from "../types/consts"
 import { ToolButton } from "./tool-button"
 import { v4 as uuid } from "uuid"
 import Konva from "konva"
-import { RectangleStruct, CircleStruct, ScribbleStruct } from "../types/typing"
+import { RectangleStruct, CircleStruct, ScribbleStruct, KonvaCanvasProps } from "../types/typing"
 
 
-// TODO MAKE BUTTON COMPONENT WITH CHILD AND ACTION PROP <BTN>CHILD</BTN>
+// ADD BRUSH SIZE 
+// ADD SOCKETS WHEN THE SELECT TOOL IS BEING USED ON THE SHAPE
 
-export const KonvaCanvas = () => {
+export const KonvaCanvas = ({socket}: KonvaCanvasProps) => {
 
     const stageRef = useRef<Konva.Stage>(null)
     const transFormerRef = useRef<Konva.Transformer>(null)
@@ -41,6 +42,28 @@ export const KonvaCanvas = () => {
         setWindowDimensions({width: window.innerWidth, height: window.innerHeight})
     }, [])
 
+    useEffect(() => {
+        const handleGetShapes = (data: any) => {
+            switch(data.shape) {
+                case ACTIONS.RECTANGLE:
+                    setRectangles((prev) => [...prev, data])
+                    break
+                case ACTIONS.CIRCLE:
+                    setCircles((prev) => [...prev, data])
+                    break
+                case ACTIONS.SCRIBBLE:
+                    setScribbles((prev) => [...prev, data])
+                    break
+            }
+        }
+
+        socket.on("get-shapes", handleGetShapes)
+
+        return () => {
+            socket.off("get-shapes", handleGetShapes)
+        }
+    }, [])
+
     // HANDLE FUNCTIONS
 
     function onPointerDown () {
@@ -60,17 +83,17 @@ export const KonvaCanvas = () => {
         switch(action) {
             case ACTIONS.RECTANGLE:
                 setRectangles((rectangles) => [...rectangles, {
-                    id, x, y, height: 20, width: 20, fillColor
+                    id, shape: ACTIONS.RECTANGLE, x, y, height: 20, width: 20, fillColor
                 }])
                 break;
             case ACTIONS.CIRCLE:
                 setCircles((circles) => [...circles, {
-                    id, radius: 20, x, y, fillColor
+                    id, shape: ACTIONS.CIRCLE, radius: 20, x, y, fillColor
                 }])
                 break;
             case ACTIONS.SCRIBBLE:
                 setScribbles((scribbles) => [...scribbles, {
-                    id, points: [x, y], fillColor
+                    id, shape: ACTIONS.SCRIBBLE, points: [x, y], fillColor
                 }])
         }
     }
@@ -128,6 +151,23 @@ export const KonvaCanvas = () => {
 
     function onPointerUp () {
         isPainting.current = false
+
+        switch(action) {
+            case ACTIONS.RECTANGLE:
+                const rect = rectangles.find(rect => rect.id === currentShapeID.current)
+                if(rect) socket.emit("canvas-input", rect)
+                break
+            case ACTIONS.CIRCLE:
+                const circ = circles.find(circ => circ.id === currentShapeID.current)
+                if(circ) socket.emit("canvas-input", circ)
+                break
+            case ACTIONS.SCRIBBLE:
+                const scribble = scribbles.find(scrib => scrib.id === currentShapeID.current)
+                if(scribble) socket.emit("canvas-input", scribble)
+                break
+        }
+
+        currentShapeID.current = null
     }
 
     function exportCanvas () {

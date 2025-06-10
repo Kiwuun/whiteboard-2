@@ -9,6 +9,7 @@ export type BtnProps = {
 
 export type RectangleStruct = {
     id: string,
+    shape: string,
     x: number,
     y: number,
     height: number, 
@@ -18,6 +19,7 @@ export type RectangleStruct = {
 
 export type CircleStruct = {
     id: string,
+    shape: string,
     radius: number,
     x: number,
     y: number,
@@ -26,6 +28,11 @@ export type CircleStruct = {
 
 export type ScribbleStruct = {
     id: string,
+    shape: string,
     points: number[],
     fillColor: string
+}
+
+export type KonvaCanvasProps = {
+    socket: Socket | null
 }
