@@ -17,8 +17,7 @@ import { RectangleStruct, CircleStruct, ScribbleStruct, KonvaCanvasProps } from 
 
 // TODO:
 // ADD BRUSH SIZE 
-// ADD SOCKETS WHEN THE SELECT TOOL IS BEING USED ON THE SHAPE
-// SET BORDER AND COLLISION=
+// SET BORDER AND COLLISION
 
 export const KonvaCanvas = ({socket}: KonvaCanvasProps) => {
 
@@ -38,12 +37,45 @@ export const KonvaCanvas = ({socket}: KonvaCanvasProps) => {
     const[circles, setCircles] = useState<CircleStruct[]>([])
     const [scribbles, setScribbles] = useState<ScribbleStruct[]>([])
 
+    // SHAPE REFS
+    const rectanglesRef = useRef<RectangleStruct[]>([])
+    const circlesRef = useRef<CircleStruct[]>([])
+    const scribblesRef = useRef<ScribbleStruct[]>([])
+
+
     // HANDLE PRELOADING ERROR: WINDOW NOT DEFINED
     useEffect(() => {
         setWindowDimensions({width: window.innerWidth, height: window.innerHeight})
     }, [])
 
+    // SYNC USESTATE SHAPES TO SHAPE REFS
     useEffect(() => {
+        rectanglesRef.current = rectangles
+        circlesRef.current = circles
+        scribblesRef.current = scribbles
+    }, [rectangles, circles, scribbles])
+
+
+    // SOCKETS 
+    useEffect(() => {
+        // FETCH STATE
+        socket.emit("client-ready")
+
+        const handleSendState = () => {
+            console.log(rectanglesRef.current)
+            socket.emit("canvas-state", {
+                rectangles: rectanglesRef.current,
+                circles: circlesRef.current,
+                scribbles: scribblesRef.current
+            })
+        }
+
+        const handleGetState = (data: any) => {
+            setRectangles((prev) => [...prev, ...data.rectangles])
+            setCircles((prev) => [...prev, ...data.circles])
+            setScribbles((prev) => [...prev, ...data.scribbles])
+        }
+
         const handleGetShapes = (data: any) => {
             switch(data.shape) {
                 case ACTIONS.RECTANGLE:
@@ -61,7 +93,6 @@ export const KonvaCanvas = ({socket}: KonvaCanvasProps) => {
         const handleTransformMove = (data: any) => {
 
             // ADD OTHER SHAPES
-            // ALSO UPDATE WIDTH, HEIGHT AND ANGLE TO ALLOW FOR THIS METHOD TO BE REUSED
             switch(data.shape) {
                 case ACTIONS.RECTANGLE:
                     setRectangles((prevRects) =>
@@ -70,15 +101,28 @@ export const KonvaCanvas = ({socket}: KonvaCanvasProps) => {
                          } : rect
                         )
                     );
-                break
+                    break
+                case ACTIONS.CIRCLE:
+                    setCircles((prevCircs) =>
+                        prevCircs.map((circ) =>
+                        circ.id === data.id ? { ...circ, angle: data.angle, x: data.x, y: data.y, height: data.height, width: data.width, 
+                         } : circ
+                        )
+                    );
+                    break
             }
         }
 
         socket.on("get-shapes", handleGetShapes)
         socket.on("get-transformed-shape", handleTransformMove)
+        socket.on("get-state", handleSendState)
+        socket.on("get-canvas-state", handleGetState)
 
         return () => {
             socket.off("get-shapes", handleGetShapes)
+            socket.off("get-transformed-shape", handleTransformMove)
+            socket.off("get-state", handleSendState)
+            socket.off("get-canvas-state", handleGetState)
         }
     }, [])
 
@@ -214,12 +258,27 @@ export const KonvaCanvas = ({socket}: KonvaCanvasProps) => {
     function handleDrag (e: Konva.KonvaEventObject<DragEvent>) {
         const { x, y } = e.target.position();
         const id = e.currentTarget.attrs.id
-        
+        const shape = e.currentTarget.attrs.shape
+        console.log(shape)
         // ADD SWITCH CASE LATER
-        const rect = rectangles.find(rect => rect.id === id)
-        rect!.x = x
-        rect!.y = y
-        socket.emit("canvas-transform", rect)
+        switch(shape) {
+            case ACTIONS.RECTANGLE:
+                const rect = rectangles.find(rect => rect.id === id)
+                rect!.x = x
+                rect!.y = y
+                socket.emit("canvas-transform", rect)
+                break
+            case ACTIONS.CIRCLE:
+                const circ = circles.find(circ => circ.id === id)
+                circ!.x = x
+                circ!.y = y
+                socket.emit("canvas-transform", circ)
+                break
+            case ACTIONS.SCRIBBLE:
+                const scribble = scribbles.find(scrib => scrib.id === id)
+                
+                break
+        }
     }
 
     function handleTransform (e: Konva.KonvaEventObject<MouseEvent>) {
@@ -322,7 +381,8 @@ export const KonvaCanvas = ({socket}: KonvaCanvasProps) => {
                         draggable={isDraggable}
                         onClick={onClick}
                         onDragMove={handleDrag}
-                        onTransform={handleTransform}/>
+                        onTransform={handleTransform}
+                        shape={rectangle.shape}/>
                     ))}
 
                     {circles.map((circle: CircleStruct, i) => (
@@ -335,7 +395,9 @@ export const KonvaCanvas = ({socket}: KonvaCanvasProps) => {
                         strokeWidth={2}
                         fill={circle.fillColor}
                         draggable={isDraggable}
-                        onClick={onClick}/>
+                        onClick={onClick}
+                        shape={circle.shape}
+                        onDragMove={handleDrag}/>
                     ))}
 
                     {scribbles.map((scribble: ScribbleStruct, i) => (
@@ -349,7 +411,8 @@ export const KonvaCanvas = ({socket}: KonvaCanvasProps) => {
                         strokeWidth={2}
                         fill={scribble.fillColor}
                         draggable={isDraggable}
-                        onClick={onClick}/>
+                        onClick={onClick}
+                        shape={scribble.shape}/>
                     ))}
 
                     <Transformer 
