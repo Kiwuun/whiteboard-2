@@ -57,7 +57,22 @@ export const KonvaCanvas = ({socket}: KonvaCanvasProps) => {
             }
         }
 
+        const handleTransformMove = (data: any) => {
+
+            // ADD OTHER SHAPES
+            switch(data.shape) {
+                case ACTIONS.RECTANGLE:
+                    setRectangles((prevRects) =>
+                        prevRects.map((rect) =>
+                        rect.id === data.id ? { ...rect, x: data.x, y: data.y } : rect
+                        )
+                    );
+                break
+            }
+        }
+
         socket.on("get-shapes", handleGetShapes)
+        socket.on("get-transformed-shape", handleTransformMove)
 
         return () => {
             socket.off("get-shapes", handleGetShapes)
@@ -185,9 +200,23 @@ export const KonvaCanvas = ({socket}: KonvaCanvasProps) => {
     function onClick (e: Konva.KonvaEventObject<MouseEvent>) {
         if(action != ACTIONS.SELECT) return
         if(!transFormerRef) return
-        const target = e.currentTarget as unknown as Konva.Node
+
+        const shape = e.currentTarget
+
+        const target = shape as unknown as Konva.Node
         if(!target) return
         transFormerRef.current!.nodes([target])
+    }
+
+    function handleDrag (e: Konva.KonvaEventObject<DragEvent>) {
+        const { x, y } = e.target.position();
+        const id = e.currentTarget.attrs.id
+        
+        // ADD SWITCH CASE LATER
+        const rect = rectangles.find(rect => rect.id === id)
+        rect!.x = x
+        rect!.y = y
+        socket.emit("canvas-transform", rect)
     }
 
     return (
@@ -240,6 +269,7 @@ export const KonvaCanvas = ({socket}: KonvaCanvasProps) => {
                     {rectangles.map((rectangle: RectangleStruct, i) => (
                         <Rect
                         key={i}
+                        id={rectangle.id}
                         x={rectangle.x}
                         y={rectangle.y}
                         strokeWidth={2}
@@ -247,12 +277,14 @@ export const KonvaCanvas = ({socket}: KonvaCanvasProps) => {
                         height={rectangle.height}
                         width={rectangle.width}
                         draggable={isDraggable}
-                        onClick={onClick}/>
+                        onClick={onClick}
+                        onDragMove={handleDrag}/>
                     ))}
 
                     {circles.map((circle: CircleStruct, i) => (
                         <Circle
                         key={i}
+                        id={circle.id}
                         x={circle.x}
                         y={circle.y}
                         radius={circle.radius}
@@ -265,6 +297,7 @@ export const KonvaCanvas = ({socket}: KonvaCanvasProps) => {
                     {scribbles.map((scribble: ScribbleStruct, i) => (
                         <Line
                         key={i}
+                        id={scribble.id}
                         lineCap="round"
                         lineJoin="round"
                         points={scribble.points}
@@ -275,7 +308,8 @@ export const KonvaCanvas = ({socket}: KonvaCanvasProps) => {
                         onClick={onClick}/>
                     ))}
 
-                    <Transformer ref={transFormerRef}/>
+                    <Transformer 
+                    ref={transFormerRef}/>
                 </Layer>
             </Stage>
             </div>
