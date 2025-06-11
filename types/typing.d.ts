@@ -10,11 +10,12 @@ export type BtnProps = {
 export type RectangleStruct = {
     id: string,
     shape: string,
+    angle: number,
     x: number,
     y: number,
     height: number, 
     width: number,
-    fillColor: string
+    fillColor: string,
 }
 
 export type CircleStruct = {

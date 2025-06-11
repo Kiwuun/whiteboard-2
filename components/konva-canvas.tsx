@@ -15,9 +15,10 @@ import { v4 as uuid } from "uuid"
 import Konva from "konva"
 import { RectangleStruct, CircleStruct, ScribbleStruct, KonvaCanvasProps } from "../types/typing"
 
-
+// TODO:
 // ADD BRUSH SIZE 
 // ADD SOCKETS WHEN THE SELECT TOOL IS BEING USED ON THE SHAPE
+// SET BORDER AND COLLISION=
 
 export const KonvaCanvas = ({socket}: KonvaCanvasProps) => {
 
@@ -60,11 +61,13 @@ export const KonvaCanvas = ({socket}: KonvaCanvasProps) => {
         const handleTransformMove = (data: any) => {
 
             // ADD OTHER SHAPES
+            // ALSO UPDATE WIDTH, HEIGHT AND ANGLE TO ALLOW FOR THIS METHOD TO BE REUSED
             switch(data.shape) {
                 case ACTIONS.RECTANGLE:
                     setRectangles((prevRects) =>
                         prevRects.map((rect) =>
-                        rect.id === data.id ? { ...rect, x: data.x, y: data.y } : rect
+                        rect.id === data.id ? { ...rect, angle: data.angle, x: data.x, y: data.y, height: data.height, width: data.width, 
+                         } : rect
                         )
                     );
                 break
@@ -98,7 +101,7 @@ export const KonvaCanvas = ({socket}: KonvaCanvasProps) => {
         switch(action) {
             case ACTIONS.RECTANGLE:
                 setRectangles((rectangles) => [...rectangles, {
-                    id, shape: ACTIONS.RECTANGLE, x, y, height: 20, width: 20, fillColor
+                    id, angle: 0, shape: ACTIONS.RECTANGLE, x, y, height: 20, width: 20, fillColor
                 }])
                 break;
             case ACTIONS.CIRCLE:
@@ -219,6 +222,45 @@ export const KonvaCanvas = ({socket}: KonvaCanvasProps) => {
         socket.emit("canvas-transform", rect)
     }
 
+    function handleTransform (e: Konva.KonvaEventObject<MouseEvent>) {
+        const shape = e.target
+        if(!shape) return
+        const angle = shape.rotation()
+        console.log(angle)
+        const { x, y } = shape.position();
+        const id = e.currentTarget.attrs.id
+        const rect = rectangles.find(rect => rect.id === id)
+        if(!rect) return
+
+        const width = shape.width() * shape.scaleX()
+        const height = shape.height() * shape.scaleY()
+
+        rect.angle = angle
+        rect.x = x
+        rect.y = y
+        rect.width = width
+        rect.height = height
+
+        const absPos = shape.getAbsolutePosition();
+
+        shape.height(height)
+        shape.width(width)
+        shape.scaleX(1)
+        shape.scaleY(1)
+
+        shape.setAbsolutePosition(absPos)
+
+        setRectangles((prevRects) =>
+                        prevRects.map((rect) =>
+                        rect.id === id ? { ...rect, x, y, height: height, width: width, 
+                         } : rect
+                        )
+                    );
+
+        socket.emit("canvas-transform", rect)
+    }
+
+
     return (
         <>
             <div className="relative w-full h-screen overflow-hidden">
@@ -270,6 +312,7 @@ export const KonvaCanvas = ({socket}: KonvaCanvasProps) => {
                         <Rect
                         key={i}
                         id={rectangle.id}
+                        rotation={rectangle.angle}
                         x={rectangle.x}
                         y={rectangle.y}
                         strokeWidth={2}
@@ -278,7 +321,8 @@ export const KonvaCanvas = ({socket}: KonvaCanvasProps) => {
                         width={rectangle.width}
                         draggable={isDraggable}
                         onClick={onClick}
-                        onDragMove={handleDrag}/>
+                        onDragMove={handleDrag}
+                        onTransform={handleTransform}/>
                     ))}
 
                     {circles.map((circle: CircleStruct, i) => (
@@ -309,7 +353,9 @@ export const KonvaCanvas = ({socket}: KonvaCanvasProps) => {
                     ))}
 
                     <Transformer 
-                    ref={transFormerRef}/>
+                    ref={transFormerRef}
+                    onTransform={handleTransform}
+                    rotationSnaps={[0, 45, 90, 135, 180, 225, 270, 315]}/>
                 </Layer>
             </Stage>
             </div>
