@@ -17,6 +17,7 @@ import { RectangleStruct, CircleStruct, ScribbleStruct, KonvaCanvasProps } from 
 
 // TODO:
 // ADD BRUSH SIZE 
+// ADD OTHER SHAPES TO TRANSFORM
 // SET BORDER AND COLLISION
 
 export const KonvaCanvas = ({socket}: KonvaCanvasProps) => {
@@ -110,6 +111,13 @@ export const KonvaCanvas = ({socket}: KonvaCanvasProps) => {
                         )
                     );
                     break
+                case ACTIONS.SCRIBBLE:
+                    setScribbles((prevLines) =>
+                        prevLines.map((line) =>
+                        line.id === data.id ? { ...line, points: data.points, 
+                         } : line
+                        )
+                    );
             }
         }
 
@@ -259,7 +267,6 @@ export const KonvaCanvas = ({socket}: KonvaCanvasProps) => {
         const { x, y } = e.target.position();
         const id = e.currentTarget.attrs.id
         const shape = e.currentTarget.attrs.shape
-        console.log(shape)
         // ADD SWITCH CASE LATER
         switch(shape) {
             case ACTIONS.RECTANGLE:
@@ -275,8 +282,7 @@ export const KonvaCanvas = ({socket}: KonvaCanvasProps) => {
                 socket.emit("canvas-transform", circ)
                 break
             case ACTIONS.SCRIBBLE:
-                const scribble = scribbles.find(scrib => scrib.id === id)
-                
+                // idk make this work somehow
                 break
         }
     }
@@ -412,7 +418,8 @@ export const KonvaCanvas = ({socket}: KonvaCanvasProps) => {
                         fill={scribble.fillColor}
                         draggable={isDraggable}
                         onClick={onClick}
-                        shape={scribble.shape}/>
+                        shape={scribble.shape}
+                        onDragMove={handleDrag}/>
                     ))}
 
                     <Transformer 
