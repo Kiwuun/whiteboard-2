@@ -114,7 +114,7 @@ export const KonvaCanvas = ({socket}: KonvaCanvasProps) => {
                 case ACTIONS.SCRIBBLE:
                     setScribbles((prevLines) =>
                         prevLines.map((line) =>
-                        line.id === data.id ? { ...line, points: data.points, 
+                        line.id === data.id ? { ...line, points: data.points, x: data.x, y: data.y
                          } : line
                         )
                     );
@@ -163,7 +163,7 @@ export const KonvaCanvas = ({socket}: KonvaCanvasProps) => {
                 break;
             case ACTIONS.SCRIBBLE:
                 setScribbles((scribbles) => [...scribbles, {
-                    id, shape: ACTIONS.SCRIBBLE, points: [x, y], fillColor
+                    id, shape: ACTIONS.SCRIBBLE, points: [x, y], fillColor, x, y
                 }])
         }
     }
@@ -265,6 +265,7 @@ export const KonvaCanvas = ({socket}: KonvaCanvasProps) => {
 
     function handleDrag (e: Konva.KonvaEventObject<DragEvent>) {
         const { x, y } = e.target.position();
+
         const id = e.currentTarget.attrs.id
         const shape = e.currentTarget.attrs.shape
         // ADD SWITCH CASE LATER
@@ -283,6 +284,11 @@ export const KonvaCanvas = ({socket}: KonvaCanvasProps) => {
                 break
             case ACTIONS.SCRIBBLE:
                 // idk make this work somehow
+                // just add x and y values to line for this 
+                const line = scribbles.find(line => line.id === id)
+                line!.x = x
+                line!.y = y 
+                socket.emit("canvas-transform", line)
                 break
         }
     }
@@ -412,6 +418,8 @@ export const KonvaCanvas = ({socket}: KonvaCanvasProps) => {
                         id={scribble.id}
                         lineCap="round"
                         lineJoin="round"
+                        x={scribble.x}
+                        y={scribble.y}
                         points={scribble.points}
                         stroke={strokeColor}
                         strokeWidth={2}
