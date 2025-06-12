@@ -163,7 +163,7 @@ export const KonvaCanvas = ({socket}: KonvaCanvasProps) => {
                 break;
             case ACTIONS.SCRIBBLE:
                 setScribbles((scribbles) => [...scribbles, {
-                    id, shape: ACTIONS.SCRIBBLE, points: [x, y], fillColor, x, y
+                    id, shape: ACTIONS.SCRIBBLE, points: [x, y], fillColor, x: 0, y: 0
                 }])
         }
     }
