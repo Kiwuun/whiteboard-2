@@ -30,6 +30,7 @@ export const KonvaCanvas = ({socket}: KonvaCanvasProps) => {
 
     const strokeColor = "#fff"
     const isDraggable = action === ACTIONS.SELECT
+
     const isPainting = useRef(false)
     const currentShapeID = useRef<string>(null)
 
@@ -106,7 +107,7 @@ export const KonvaCanvas = ({socket}: KonvaCanvasProps) => {
                 case ACTIONS.CIRCLE:
                     setCircles((prevCircs) =>
                         prevCircs.map((circ) =>
-                        circ.id === data.id ? { ...circ, angle: data.angle, x: data.x, y: data.y, height: data.height, width: data.width, 
+                        circ.id === data.id ? { ...circ, x: data.x, y: data.y, radius: data.radius
                          } : circ
                         )
                     );
@@ -268,7 +269,7 @@ export const KonvaCanvas = ({socket}: KonvaCanvasProps) => {
 
         const id = e.currentTarget.attrs.id
         const shape = e.currentTarget.attrs.shape
-        // ADD SWITCH CASE LATER
+
         switch(shape) {
             case ACTIONS.RECTANGLE:
                 const rect = rectangles.find(rect => rect.id === id)
@@ -283,8 +284,6 @@ export const KonvaCanvas = ({socket}: KonvaCanvasProps) => {
                 socket.emit("canvas-transform", circ)
                 break
             case ACTIONS.SCRIBBLE:
-                // idk make this work somehow
-                // just add x and y values to line for this 
                 const line = scribbles.find(line => line.id === id)
                 line!.x = x
                 line!.y = y 
@@ -296,39 +295,58 @@ export const KonvaCanvas = ({socket}: KonvaCanvasProps) => {
     function handleTransform (e: Konva.KonvaEventObject<MouseEvent>) {
         const shape = e.target
         if(!shape) return
+        const s = e.currentTarget.attrs.shape
         const angle = shape.rotation()
-        console.log(angle)
         const { x, y } = shape.position();
         const id = e.currentTarget.attrs.id
-        const rect = rectangles.find(rect => rect.id === id)
-        if(!rect) return
 
-        const width = shape.width() * shape.scaleX()
-        const height = shape.height() * shape.scaleY()
 
-        rect.angle = angle
-        rect.x = x
-        rect.y = y
-        rect.width = width
-        rect.height = height
+        switch(s) {
+            case ACTIONS.RECTANGLE:
+                const rect = rectangles.find(rect => rect.id === id)
+                if(!rect) return
 
-        const absPos = shape.getAbsolutePosition();
+                const width = shape.width() * shape.scaleX()
+                const height = shape.height() * shape.scaleY()
 
-        shape.height(height)
-        shape.width(width)
-        shape.scaleX(1)
-        shape.scaleY(1)
+                rect.angle = angle
+                rect.x = x
+                rect.y = y
+                rect.width = width
+                rect.height = height
 
-        shape.setAbsolutePosition(absPos)
+                setRectangles((prevRects) =>
+                                prevRects.map((rect) =>
+                                rect.id === id ? { ...rect, x, y, height: height, width: width, 
+                                } : rect
+                                )
+                            );
 
-        setRectangles((prevRects) =>
-                        prevRects.map((rect) =>
-                        rect.id === id ? { ...rect, x, y, height: height, width: width, 
-                         } : rect
-                        )
-                    );
+                socket.emit("canvas-transform", rect)
+                break
+            case ACTIONS.CIRCLE:
+                const circ = circles.find(circ => circ.id === id)
+                if(!circ) return
+                const newRadius = circ.radius * shape.scaleX()
 
-        socket.emit("canvas-transform", rect)
+                shape.scaleX(1);
+                shape.scaleY(1);    
+
+                setCircles((prevCirc) =>
+                                prevCirc.map((circ) =>
+                                circ.id === id ? { ...circ, radius: newRadius, x, y
+                                } : circ
+                                )
+                            );
+
+                socket.emit("canvas-transform", circ)
+                break;
+        }
+
+        // const absPos = shape.getAbsolutePosition();
+
+
+        // shape.setAbsolutePosition(absPos)
     }
 
 
@@ -409,7 +427,8 @@ export const KonvaCanvas = ({socket}: KonvaCanvasProps) => {
                         draggable={isDraggable}
                         onClick={onClick}
                         shape={circle.shape}
-                        onDragMove={handleDrag}/>
+                        onDragMove={handleDrag}
+                        onTransform={handleTransform}/>
                     ))}
 
                     {scribbles.map((scribble: ScribbleStruct, i) => (
