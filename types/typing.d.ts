@@ -33,7 +33,10 @@ export type ScribbleStruct = {
     points: number[],
     fillColor: string,
     x: number, 
-    y: number
+    y: number,
+    height: number,
+    width: number,
+    angle: number
 }
 
 export type KonvaCanvasProps = {

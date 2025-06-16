@@ -14,11 +14,15 @@ import { ToolButton } from "./tool-button"
 import { v4 as uuid } from "uuid"
 import Konva from "konva"
 import { RectangleStruct, CircleStruct, ScribbleStruct, KonvaCanvasProps } from "../types/typing"
+import { transform } from "next/dist/build/swc/generated-native"
 
 // TODO:
 // ADD BRUSH SIZE 
-// ADD OTHER SHAPES TO TRANSFORM
+// ADD OTHER SHAPES TO TRANSFORM - I THINK I DID
 // SET BORDER AND COLLISION
+// ADD ERASER
+// ADD CHAT
+// ADD CHAT ROOM OPTIONS WITH PUBLIC / PRIVATE SETTINGS
 
 export const KonvaCanvas = ({socket}: KonvaCanvasProps) => {
 
@@ -115,7 +119,7 @@ export const KonvaCanvas = ({socket}: KonvaCanvasProps) => {
                 case ACTIONS.SCRIBBLE:
                     setScribbles((prevLines) =>
                         prevLines.map((line) =>
-                        line.id === data.id ? { ...line, points: data.points, x: data.x, y: data.y
+                        line.id === data.id ? { ...line, points: data.points, x: data.x, y: data.y, angle: data.angle, height: data.height, width: data.width
                          } : line
                         )
                     );
@@ -136,6 +140,15 @@ export const KonvaCanvas = ({socket}: KonvaCanvasProps) => {
     }, [])
 
     // HANDLE FUNCTIONS
+
+    function handleOnPointerDown (e: Konva.KonvaEventObject<MouseEvent>) {
+        if(e.target === e.target.getStage()) {
+            transFormerRef.current!.nodes([])
+            transFormerRef.current?.getLayer()?.batchDraw();
+        } 
+
+        onPointerDown()
+    }
 
     function onPointerDown () {
         if(action === ACTIONS.SELECT) return
@@ -164,7 +177,7 @@ export const KonvaCanvas = ({socket}: KonvaCanvasProps) => {
                 break;
             case ACTIONS.SCRIBBLE:
                 setScribbles((scribbles) => [...scribbles, {
-                    id, shape: ACTIONS.SCRIBBLE, points: [x, y], fillColor, x: 0, y: 0
+                    id, shape: ACTIONS.SCRIBBLE, points: [x, y], fillColor, x: 0, y: 0, angle: 0, height: 20, width: 20
                 }])
         }
     }
@@ -260,8 +273,19 @@ export const KonvaCanvas = ({socket}: KonvaCanvasProps) => {
         const shape = e.currentTarget
 
         const target = shape as unknown as Konva.Node
+        const shapeType = target.attrs.shape
         if(!target) return
         transFormerRef.current!.nodes([target])
+
+        if(shapeType === ACTIONS.SCRIBBLE) {
+            transFormerRef.current?.rotateEnabled(true)
+            transFormerRef.current?.resizeEnabled(false)
+        } else {
+            transFormerRef.current?.rotateEnabled(true);
+            transFormerRef.current?.resizeEnabled(true);
+        }
+
+        transFormerRef.current?.getLayer()?.batchDraw();
     }
 
     function handleDrag (e: Konva.KonvaEventObject<DragEvent>) {
@@ -341,6 +365,23 @@ export const KonvaCanvas = ({socket}: KonvaCanvasProps) => {
 
                 socket.emit("canvas-transform", circ)
                 break;
+            case ACTIONS.SCRIBBLE:
+                const line = scribbles.find(line => line.id === id)
+                if(!line) return
+
+                line.angle = angle
+                line.x = x
+                line.y = y
+
+                setScribbles((prevLine) =>
+                                prevLine.map((line) =>
+                                line.id === id ? { ...line, x, y, 
+                                } : line
+                                )
+                            );
+
+                socket.emit("canvas-transform", line)
+                break
         }
 
         // const absPos = shape.getAbsolutePosition();
@@ -393,7 +434,7 @@ export const KonvaCanvas = ({socket}: KonvaCanvasProps) => {
                 </div>
             {/* CANVAS */}
             <Stage ref={stageRef} width={windowDimensions.width} height={windowDimensions.height}
-            onPointerDown={onPointerDown}
+            onPointerDown={handleOnPointerDown}
             onPointerMove={onPointerMove}
             onPointerUp={onPointerUp}>
                 <Layer>
@@ -443,10 +484,13 @@ export const KonvaCanvas = ({socket}: KonvaCanvasProps) => {
                         stroke={strokeColor}
                         strokeWidth={2}
                         fill={scribble.fillColor}
+                        rotation={scribble.angle}
                         draggable={isDraggable}
                         onClick={onClick}
                         shape={scribble.shape}
-                        onDragMove={handleDrag}/>
+                        onDragMove={handleDrag}
+                        onTransform={handleTransform}
+                        />
                     ))}
 
                     <Transformer 
