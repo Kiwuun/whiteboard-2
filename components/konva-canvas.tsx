@@ -14,7 +14,8 @@ import { ToolButton } from "./tool-button"
 import { v4 as uuid } from "uuid"
 import Konva from "konva"
 import { RectangleStruct, CircleStruct, ScribbleStruct, KonvaCanvasProps } from "../types/typing"
-import { transform } from "next/dist/build/swc/generated-native"
+import Stack from '@mui/material/Stack';
+import Slider from '@mui/material/Slider';
 
 // TODO:
 // ADD BRUSH SIZE 
@@ -30,6 +31,7 @@ export const KonvaCanvas = ({socket}: KonvaCanvasProps) => {
     const transFormerRef = useRef<Konva.Transformer>(null)
     const [action, setAction] = useState(ACTIONS.SELECT)
     const [fillColor, setFillColor] = useState<string>("#ff0000")
+    const [strokeSize, setStrokeSize] = useState<number>(12)
     const [windowDimensions, setWindowDimensions] = useState({width: 0, height: 0})
 
     const strokeColor = "#fff"
@@ -177,7 +179,7 @@ export const KonvaCanvas = ({socket}: KonvaCanvasProps) => {
                 break;
             case ACTIONS.SCRIBBLE:
                 setScribbles((scribbles) => [...scribbles, {
-                    id, shape: ACTIONS.SCRIBBLE, points: [x, y], fillColor, x: 0, y: 0, angle: 0, height: 20, width: 20
+                    id, shape: ACTIONS.SCRIBBLE, points: [x, y], fillColor, x: 0, y: 0, angle: 0, stroke: strokeSize
                 }])
         }
     }
@@ -432,6 +434,21 @@ export const KonvaCanvas = ({socket}: KonvaCanvasProps) => {
                         </button>
                     </div>
                 </div>
+
+            {/* STROKE SLIDER */}
+            <Stack 
+            sx={{ height: 300, pointerEvents: "none", transform: "translateY(-50%)", top: "50%", position: "fixed", zIndex: 5}} 
+            spacing={1}>
+                <Slider
+                sx={{pointerEvents: "auto"}}
+                aria-label="Stroke"
+                orientation="vertical"
+                valueLabelDisplay="auto"
+                defaultValue={12}
+                min={1}
+                onChange={(e, value) => setStrokeSize(value as number)}
+            />
+            </Stack>
             {/* CANVAS */}
             <Stage ref={stageRef} width={windowDimensions.width} height={windowDimensions.height}
             onPointerDown={handleOnPointerDown}
