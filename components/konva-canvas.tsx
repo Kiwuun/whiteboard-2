@@ -176,6 +176,7 @@ export const KonvaCanvas = ({socket}: KonvaCanvasProps) => {
                 }])
                 break;
             case ACTIONS.SCRIBBLE:
+                // ADD NEW SCRIBLE WHEN SCRIBBLE AND MOUSE DOWN
                 setScribbles((scribbles) => [...scribbles, {
                     id, shape: ACTIONS.SCRIBBLE, points: [x, y], fillColor, x: 0, y: 0, angle: 0, stroke: strokeSize
                 }])
@@ -508,7 +509,7 @@ export const KonvaCanvas = ({socket}: KonvaCanvasProps) => {
                         x={scribble.x}
                         y={scribble.y}
                         points={scribble.points}
-                        stroke={strokeColor}
+                        stroke={scribble.fillColor}
                         strokeWidth={scribble.stroke}
                         fill={scribble.fillColor}
                         rotation={scribble.angle}
