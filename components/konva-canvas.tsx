@@ -18,8 +18,6 @@ import Stack from '@mui/material/Stack';
 import Slider from '@mui/material/Slider';
 
 // TODO:
-// ADD BRUSH SIZE 
-// ADD OTHER SHAPES TO TRANSFORM - I THINK I DID
 // SET BORDER AND COLLISION
 // ADD ERASER
 // ADD CHAT
@@ -181,6 +179,18 @@ export const KonvaCanvas = ({socket}: KonvaCanvasProps) => {
                 setScribbles((scribbles) => [...scribbles, {
                     id, shape: ACTIONS.SCRIBBLE, points: [x, y], fillColor, x: 0, y: 0, angle: 0, stroke: strokeSize
                 }])
+
+                setScribbles((scribbles) =>scribbles.map((scribble) => {
+                    if (scribble.id === currentShapeID.current) {
+                        return {
+                            ...scribble,
+                            points: [...scribble.points, x, y],
+                        };
+                    }
+
+                    return scribble;
+                }))
+                break
         }
     }
 
