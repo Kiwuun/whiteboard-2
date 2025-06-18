@@ -437,7 +437,7 @@ export const KonvaCanvas = ({socket}: KonvaCanvasProps) => {
 
             {/* STROKE SLIDER */}
             <Stack 
-            sx={{ height: 300, pointerEvents: "none", transform: "translateY(-50%)", top: "50%", position: "fixed", zIndex: 5}} 
+            sx={{ height: 300, pointerEvents: "none", transform: "translateY(-50%) translateX(200%)", top: "50%", position: "fixed", zIndex: 5}} 
             spacing={1}>
                 <Slider
                 sx={{pointerEvents: "auto"}}
@@ -499,7 +499,7 @@ export const KonvaCanvas = ({socket}: KonvaCanvasProps) => {
                         y={scribble.y}
                         points={scribble.points}
                         stroke={strokeColor}
-                        strokeWidth={2}
+                        strokeWidth={scribble.stroke}
                         fill={scribble.fillColor}
                         rotation={scribble.angle}
                         draggable={isDraggable}
