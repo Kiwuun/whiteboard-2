@@ -6,6 +6,8 @@ import { FaLongArrowAltRight } from "react-icons/fa"
 import { LuPencil } from "react-icons/lu"
 import { GiArrowCursor } from "react-icons/gi"
 import { FaRegCircle } from "react-icons/fa"
+import { BiDoorOpen } from "react-icons/bi";
+import { FaRegTrashCan } from "react-icons/fa6";
 
 import { Stage, Layer, Rect, Circle, Line, Transformer } from "react-konva"
 import { useEffect, useRef, useState } from "react"
@@ -22,6 +24,7 @@ import Slider from '@mui/material/Slider';
 // ADD ERASER
 // ADD CHAT
 // ADD CHAT ROOM OPTIONS WITH PUBLIC / PRIVATE SETTINGS
+// CLEAR CANVAS
 
 export const KonvaCanvas = ({socket}: KonvaCanvasProps) => {
 
@@ -32,7 +35,6 @@ export const KonvaCanvas = ({socket}: KonvaCanvasProps) => {
     const [strokeSize, setStrokeSize] = useState<number>(12)
     const [windowDimensions, setWindowDimensions] = useState({width: 0, height: 0})
 
-    const strokeColor = "#fff"
     const isDraggable = action === ACTIONS.SELECT
 
     const isPainting = useRef(false)
@@ -62,7 +64,7 @@ export const KonvaCanvas = ({socket}: KonvaCanvasProps) => {
     }, [rectangles, circles, scribbles])
 
 
-    // SOCKETS 
+    // SOCKETS / HANDLE METHODS
     useEffect(() => {
         // FETCH STATE
         socket.emit("client-ready")
@@ -140,6 +142,10 @@ export const KonvaCanvas = ({socket}: KonvaCanvasProps) => {
     }, [])
 
     // HANDLE FUNCTIONS
+
+    function checkBorderCollision () {
+
+    }
 
     function handleOnPointerDown (e: Konva.KonvaEventObject<MouseEvent>) {
         if(e.target === e.target.getStage()) {
@@ -403,6 +409,12 @@ export const KonvaCanvas = ({socket}: KonvaCanvasProps) => {
         // shape.setAbsolutePosition(absPos)
     }
 
+    function handleClear () {
+        setCircles(() => [])
+        setRectangles(() => [])
+        setScribbles(() => [])
+    }
+
 
     return (
         <>
@@ -430,10 +442,14 @@ export const KonvaCanvas = ({socket}: KonvaCanvasProps) => {
                             <LuPencil size={"2rem"}/>
                         </ToolButton>
 
+                        <button onClick={handleClear} className="cursor-pointer">
+                            <FaRegTrashCan size={"1.75rem"}/>
+                        </button>
+
                         <button>
                             <input 
-                            className="w-6 h-6" 
-                            type="color" 
+                            className="w-6 h-6 cursor-pointer" 
+                            type="color"
                             value={fillColor} 
                             onChange={(e) => setFillColor(e.target.value)}/>
                         </button>
@@ -443,6 +459,11 @@ export const KonvaCanvas = ({socket}: KonvaCanvasProps) => {
                         onClick={exportCanvas}>
                             <IoMdDownload size={"1.5rem"}/>
                         </button>
+
+                        <button className="cursor-pointer">
+                            <BiDoorOpen size={"2rem"}/>
+                        </button>
+
                     </div>
                 </div>
 
