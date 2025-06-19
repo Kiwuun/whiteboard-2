@@ -133,12 +133,14 @@ export const KonvaCanvas = ({socket}: KonvaCanvasProps) => {
         socket.on("get-transformed-shape", handleTransformMove)
         socket.on("get-state", handleSendState)
         socket.on("get-canvas-state", handleGetState)
+        socket.on("clear-canvas", handleClear)
 
         return () => {
             socket.off("get-shapes", handleGetShapes)
             socket.off("get-transformed-shape", handleTransformMove)
             socket.off("get-state", handleSendState)
             socket.off("get-canvas-state", handleGetState)
+            socket.off("clear-canvas", handleClear)
         }
     }, [])
 
@@ -414,6 +416,8 @@ export const KonvaCanvas = ({socket}: KonvaCanvasProps) => {
         setCircles(() => [])
         setRectangles(() => [])
         setScribbles(() => [])
+
+        socket.emit("clear-canvas-s")
     }
 
 
