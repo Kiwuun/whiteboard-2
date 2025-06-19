@@ -31,7 +31,8 @@ export const KonvaCanvas = ({socket}: KonvaCanvasProps) => {
     const stageRef = useRef<Konva.Stage>(null)
     const transFormerRef = useRef<Konva.Transformer>(null)
     const [action, setAction] = useState(ACTIONS.SELECT)
-    const [fillColor, setFillColor] = useState<string>("#ff0000")
+    // const [fillColor, setFillColor] = useState<string>("#ff0000")
+    const fillColor = useRef<string>("#ff0000")
     const [strokeSize, setStrokeSize] = useState<number>(12)
     const [windowDimensions, setWindowDimensions] = useState({width: 0, height: 0})
 
@@ -173,18 +174,18 @@ export const KonvaCanvas = ({socket}: KonvaCanvasProps) => {
         switch(action) {
             case ACTIONS.RECTANGLE:
                 setRectangles((rectangles) => [...rectangles, {
-                    id, angle: 0, shape: ACTIONS.RECTANGLE, x, y, height: 20, width: 20, fillColor
+                    id, angle: 0, shape: ACTIONS.RECTANGLE, x, y, height: 20, width: 20, fillColor: fillColor.current
                 }])
                 break;
             case ACTIONS.CIRCLE:
                 setCircles((circles) => [...circles, {
-                    id, shape: ACTIONS.CIRCLE, radius: 20, x, y, fillColor
+                    id, shape: ACTIONS.CIRCLE, radius: 20, x, y, fillColor: fillColor.current
                 }])
                 break;
             case ACTIONS.SCRIBBLE:
                 // ADD NEW SCRIBLE WHEN SCRIBBLE AND MOUSE DOWN
                 setScribbles((scribbles) => [...scribbles, {
-                    id, shape: ACTIONS.SCRIBBLE, points: [x, y], fillColor, x: 0, y: 0, angle: 0, stroke: strokeSize
+                    id, shape: ACTIONS.SCRIBBLE, points: [x, y], fillColor: fillColor.current, x: 0, y: 0, angle: 0, stroke: strokeSize
                 }])
 
                 setScribbles((scribbles) =>scribbles.map((scribble) => {
@@ -450,8 +451,8 @@ export const KonvaCanvas = ({socket}: KonvaCanvasProps) => {
                             <input 
                             className="w-6 h-6 cursor-pointer" 
                             type="color"
-                            value={fillColor} 
-                            onChange={(e) => setFillColor(e.target.value)}/>
+                            value={fillColor.current} 
+                            onChange={(e) => fillColor.current = e.target.value}/>
                         </button>
 
                         <button
