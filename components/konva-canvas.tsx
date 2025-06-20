@@ -18,21 +18,26 @@ import Konva from "konva"
 import { RectangleStruct, CircleStruct, ScribbleStruct, KonvaCanvasProps } from "../types/typing"
 import Stack from '@mui/material/Stack';
 import Slider from '@mui/material/Slider';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover"
+import { Input } from "@/components/ui/input"
+import { Button } from "@/components/ui/button"
 
 // TODO:
 // SET BORDER AND COLLISION
 // ADD ERASER
 // ADD CHAT
 // ADD CHAT ROOM OPTIONS WITH PUBLIC / PRIVATE SETTINGS
-// CLEAR CANVAS
 
 export const KonvaCanvas = ({socket}: KonvaCanvasProps) => {
 
     const stageRef = useRef<Konva.Stage>(null)
     const transFormerRef = useRef<Konva.Transformer>(null)
     const [action, setAction] = useState(ACTIONS.SELECT)
-    // const [fillColor, setFillColor] = useState<string>("#ff0000")
-    const fillColor = useRef<string>("#ff0000")
+    const fillColor = useRef<string>("#ffffff")
     const [strokeSize, setStrokeSize] = useState<number>(12)
     const [windowDimensions, setWindowDimensions] = useState({width: 0, height: 0})
 
@@ -425,7 +430,7 @@ export const KonvaCanvas = ({socket}: KonvaCanvasProps) => {
         <>
             <div className="relative w-full h-screen overflow-hidden">
                 <div className="abolute top-0 z-10 w-full py-2">
-                    <div className="flex justify-center items-center gap-3 py-2 px-3 w-fit mx-auto border border-">
+                    <div className="flex justify-center items-center gap-3 py-2 px-3 w-fit mx-auto">
 
                         <ToolButton setAction={setAction} Action={action} Tool={ACTIONS.SELECT}>
                             <GiArrowCursor size={"2rem"}/>
@@ -447,27 +452,35 @@ export const KonvaCanvas = ({socket}: KonvaCanvasProps) => {
                             <LuPencil size={"2rem"}/>
                         </ToolButton>
 
-                        <button onClick={handleClear} className="cursor-pointer">
-                            <FaRegTrashCan size={"1.75rem"}/>
+                        <button onClick={handleClear} className="p-1 cursor-pointer hover:bg-slate-700 rounded">
+                            <FaRegTrashCan size={"2rem"}/>
                         </button>
 
                         <button>
                             <input 
-                            className="w-6 h-6 cursor-pointer" 
+                            className="w-6 h-6 cursor-pointer hover:bg-slate-700 rounded" 
                             type="color"
                             value={fillColor.current} 
                             onChange={(e) => fillColor.current = e.target.value}/>
                         </button>
 
                         <button
-                        className="cursor-pointer"
+                        className="p-1 cursor-pointer hover:bg-slate-700 rounded"
                         onClick={exportCanvas}>
-                            <IoMdDownload size={"1.5rem"}/>
+                            <IoMdDownload size={"2rem"}/>
                         </button>
 
-                        <button className="cursor-pointer">
-                            <BiDoorOpen size={"2rem"}/>
-                        </button>
+                        <Popover>
+                            <PopoverTrigger className="p-1 cursor-pointer hover:bg-slate-700 rounded">
+                                <BiDoorOpen size={"2rem"}/>
+                            </PopoverTrigger>
+                            <PopoverContent className="bg-neutral-800 text-white border-none">
+                                <div className="flex flex-col items-center">
+                                    <Input type="text" className="w-40" placeholder="Room..."/>
+                                    <Button variant="outline" className="mt-2 w-40">Join</Button>
+                                </div>
+                            </PopoverContent>
+                        </Popover>
 
                     </div>
                 </div>
@@ -477,13 +490,13 @@ export const KonvaCanvas = ({socket}: KonvaCanvasProps) => {
             sx={{ height: 300, pointerEvents: "none", transform: "translateY(-50%) translateX(200%)", top: "50%", position: "fixed", zIndex: 5}} 
             spacing={1}>
                 <Slider
-                sx={{pointerEvents: "auto"}}
+                sx={{pointerEvents: "auto", color: "white"}}
                 aria-label="Stroke"
                 orientation="vertical"
                 valueLabelDisplay="auto"
                 defaultValue={12}
                 min={1}
-                onChange={(e, value) => setStrokeSize(value as number)}
+                onChangeCommitted={(e, value) => setStrokeSize(value as number)}
             />
             </Stack>
             {/* CANVAS */}

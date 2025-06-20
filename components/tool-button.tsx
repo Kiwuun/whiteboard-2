@@ -1,5 +1,4 @@
 import { BtnProps } from "../types/typing"
-import { ACTIONS } from "../types/consts"
 
 
 export const ToolButton = ({children, Action, setAction, Tool}: BtnProps) => {
