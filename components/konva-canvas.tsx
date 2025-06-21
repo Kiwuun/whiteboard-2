@@ -40,6 +40,7 @@ export const KonvaCanvas = ({socket}: KonvaCanvasProps) => {
     const room = useRef<string>("")
     const [action, setAction] = useState(ACTIONS.SELECT)
     const [strokeSize, setStrokeSize] = useState<number>(12)
+    const [popOpen, setPopOpen] = useState<boolean>(false)
     const [windowDimensions, setWindowDimensions] = useState({width: 0, height: 0})
 
     const isDraggable = action === ACTIONS.SELECT
@@ -427,6 +428,7 @@ export const KonvaCanvas = ({socket}: KonvaCanvasProps) => {
     function handleSubmit () {
         socket.emit("join-room", room.current)
         socket.emit("client-ready")
+        setPopOpen(false)
     }
 
     return (
@@ -473,7 +475,7 @@ export const KonvaCanvas = ({socket}: KonvaCanvasProps) => {
                             <IoMdDownload size={"2rem"}/>
                         </button>
 
-                        <Popover>
+                        <Popover open={popOpen} onOpenChange={setPopOpen}>
                             <PopoverTrigger className="p-1 cursor-pointer hover:bg-slate-700 rounded">
                                 <BiDoorOpen size={"2rem"}/>
                             </PopoverTrigger>
