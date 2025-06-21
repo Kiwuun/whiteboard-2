@@ -36,8 +36,9 @@ export const KonvaCanvas = ({socket}: KonvaCanvasProps) => {
 
     const stageRef = useRef<Konva.Stage>(null)
     const transFormerRef = useRef<Konva.Transformer>(null)
-    const [action, setAction] = useState(ACTIONS.SELECT)
     const fillColor = useRef<string>("#ffffff")
+    const room = useRef<string>("")
+    const [action, setAction] = useState(ACTIONS.SELECT)
     const [strokeSize, setStrokeSize] = useState<number>(12)
     const [windowDimensions, setWindowDimensions] = useState({width: 0, height: 0})
 
@@ -72,8 +73,6 @@ export const KonvaCanvas = ({socket}: KonvaCanvasProps) => {
 
     // SOCKETS / HANDLE METHODS
     useEffect(() => {
-        // FETCH STATE
-        socket.emit("client-ready")
 
         const handleSendState = () => {
             console.log(rectanglesRef.current)
@@ -425,6 +424,10 @@ export const KonvaCanvas = ({socket}: KonvaCanvasProps) => {
         socket.emit("clear-canvas-s")
     }
 
+    function handleSubmit () {
+        socket.emit("join-room", room.current)
+        socket.emit("client-ready")
+    }
 
     return (
         <>
@@ -476,8 +479,10 @@ export const KonvaCanvas = ({socket}: KonvaCanvasProps) => {
                             </PopoverTrigger>
                             <PopoverContent className="bg-neutral-800 text-white border-none">
                                 <div className="flex flex-col items-center">
-                                    <Input type="text" className="w-40" placeholder="Room..."/>
-                                    <Button variant="outline" className="mt-2 w-40">Join</Button>
+                                    <Input type="text" className="w-40" placeholder="Room..."
+                                    onChange={(e) => room.current = e.target.value}/>
+                                    <Button variant="outline" className="mt-2 w-40"
+                                    onClick={handleSubmit}>Join</Button>
                                 </div>
                             </PopoverContent>
                         </Popover>
