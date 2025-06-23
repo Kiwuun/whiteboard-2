@@ -20,7 +20,7 @@ export default function ChatBox () {
             <p className="text-sm font-semibold text-muted-foreground">Alice</p>
             <div className="flex items-end gap-2">
                 <div className="p-2 rounded bg-muted w-fit">Hello!</div>
-                <p className="text-xs font-semibold text-muted-foreground">7:30</p>
+                <p className="text-xs font-semibold text-muted-foreground mb-2">7:30</p>
             </div>
           </div>
           <div className="space-y-1 text-right">
