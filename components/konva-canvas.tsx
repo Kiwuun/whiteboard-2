@@ -25,6 +25,7 @@ import {
 } from "@/components/ui/popover"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
+import ChatBox from "./chat"
 
 // TODO:
 // SET BORDER AND COLLISION
@@ -491,6 +492,8 @@ export const KonvaCanvas = ({socket}: KonvaCanvasProps) => {
 
                     </div>
                 </div>
+
+                <ChatBox/>
 
             {/* STROKE SLIDER */}
             <Stack 
