@@ -41,3 +41,7 @@ export type ScribbleStruct = {
 export type KonvaCanvasProps = {
     socket: Socket | null
 }
+
+export type CanvasSocketProps = {
+  socket: Socket | null
+}

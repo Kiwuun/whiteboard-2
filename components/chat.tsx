@@ -4,14 +4,18 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
+import { CanvasSocketProps } from "../types/typing"
 
 
-export default function ChatBox () {
+export default function ChatBox ({socket}: CanvasSocketProps) {
   return (
-     <Card className="w-full max-w-md h-[500px] flex flex-col">
+     <Card className="w-auto max-w-md h-[500px] flex flex-col">
       <div className="border-b">
         <CardHeader>
-            <CardTitle>Room Chat</CardTitle>
+            <div className="flex items-center justify-between">
+                <CardTitle>Room Chat</CardTitle>
+                <p className="text-sm font-semibold text-muted-foreground">Members: 10</p>
+            </div>
         </CardHeader>
       </div>
       <CardContent className="flex-1 overflow-hidden">

@@ -8,6 +8,7 @@ import { GiArrowCursor } from "react-icons/gi"
 import { FaRegCircle } from "react-icons/fa"
 import { BiDoorOpen } from "react-icons/bi";
 import { FaRegTrashCan } from "react-icons/fa6";
+import { IoIosClose } from "react-icons/io";
 
 import { Stage, Layer, Rect, Circle, Line, Transformer } from "react-konva"
 import { useEffect, useRef, useState } from "react"
@@ -23,6 +24,29 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover"
+import {
+  Drawer,
+  DrawerClose,
+  DrawerContent,
+  DrawerDescription,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerOverlay,
+  DrawerPortal,
+  DrawerTitle,
+  DrawerTrigger,
+} from "@/components/ui/drawer"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import ChatBox from "./chat"
@@ -42,6 +66,7 @@ export const KonvaCanvas = ({socket}: KonvaCanvasProps) => {
     const [action, setAction] = useState(ACTIONS.SELECT)
     const [strokeSize, setStrokeSize] = useState<number>(12)
     const [popOpen, setPopOpen] = useState<boolean>(false)
+    const [drawer, setDrawer] = useState<boolean>(false)
     const [windowDimensions, setWindowDimensions] = useState({width: 0, height: 0})
 
     const isDraggable = action === ACTIONS.SELECT
@@ -458,9 +483,21 @@ export const KonvaCanvas = ({socket}: KonvaCanvasProps) => {
                             <LuPencil size={"2rem"}/>
                         </ToolButton>
 
-                        <button onClick={handleClear} className="p-1 cursor-pointer hover:bg-slate-700 rounded">
-                            <FaRegTrashCan size={"2rem"}/>
-                        </button>
+                        <AlertDialog>
+                            <AlertDialogTrigger className="p-1 cursor-pointer hover:bg-slate-700 rounded"><FaRegTrashCan size={"2rem"}/></AlertDialogTrigger>
+                            <AlertDialogContent className="border-none">
+                                <AlertDialogHeader>
+                                <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                    This action cannot be undone. This will permanently clear the canvas.
+                                </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction onClick={handleClear} className="bg-red-500">Continue</AlertDialogAction>
+                                </AlertDialogFooter>
+                            </AlertDialogContent>
+                        </AlertDialog>
 
                         <button>
                             <input 
@@ -490,10 +527,23 @@ export const KonvaCanvas = ({socket}: KonvaCanvasProps) => {
                             </PopoverContent>
                         </Popover>
 
+                        <Drawer direction={"right"} modal={false}>
+                            <DrawerOverlay/>
+                            <DrawerTrigger className="flex items-end">Open</DrawerTrigger>
+                                <DrawerContent className="border-none">
+                                <DrawerHeader className="flex items-end">
+                                    <DrawerClose asChild={true}>
+                                        <Button variant="outline" className="w-[40px]"><IoIosClose /></Button>
+                                    </DrawerClose>
+                                <DrawerTitle></DrawerTitle>
+                                </DrawerHeader>
+                                <ChatBox socket={socket}/>
+                            </DrawerContent>
+                        </Drawer>
+
                     </div>
                 </div>
 
-                <ChatBox/>
 
             {/* STROKE SLIDER */}
             <Stack 
@@ -517,6 +567,7 @@ export const KonvaCanvas = ({socket}: KonvaCanvasProps) => {
                 <Layer>
                     {rectangles.map((rectangle: RectangleStruct, i) => (
                         <Rect
+                        cornerRadius={15}
                         key={i}
                         id={rectangle.id}
                         rotation={rectangle.angle}
