@@ -47,6 +47,14 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import ChatBox from "./chat"
@@ -272,19 +280,16 @@ export const KonvaCanvas = ({socket}: KonvaCanvasProps) => {
                 }))
                 break
             case ACTIONS.SCRIBBLE:
-                setScribbles((scribbles) =>scribbles.map((scribble) => {
-                    if (scribble.id === currentShapeID.current) {
-                        return {
-                            ...scribble,
-                            points: [...scribble.points, x, y],
-                        };
-                    }
-
-                    return scribble;
-                }))
-                    break;
-        }
-    }
+            setScribbles((scribbles) =>
+                scribbles.map((scribble) =>
+                    scribble.id === currentShapeID.current
+                        ? { ...scribble, points: [...scribble.points, x, y] }
+                        : scribble
+                )
+            );
+            break;
+                }
+            }
 
     function onPointerUp () {
         isPainting.current = false
@@ -513,8 +518,8 @@ export const KonvaCanvas = ({socket}: KonvaCanvasProps) => {
                             <IoMdDownload size={"2rem"}/>
                         </button>
 
-                        <Popover open={popOpen} onOpenChange={setPopOpen}>
-                            <PopoverTrigger className="p-1 cursor-pointer hover:bg-slate-700 rounded">
+                        {/* <Popover open={popOpen} onOpenChange={setPopOpen}>
+                            <PopoverTrigger asChild className="p-1 cursor-pointer hover:bg-slate-700 rounded">
                                 <BiDoorOpen size={"2rem"}/>
                             </PopoverTrigger>
                             <PopoverContent className="bg-neutral-800 text-white border-none">
@@ -525,7 +530,23 @@ export const KonvaCanvas = ({socket}: KonvaCanvasProps) => {
                                     onClick={handleSubmit}>Join</Button>
                                 </div>
                             </PopoverContent>
-                        </Popover>
+                        </Popover> */}
+
+                        <DropdownMenu>
+                            <DropdownMenuTrigger className="p-1 cursor-pointer hover:bg-slate-700 rounded"><BiDoorOpen size={"2rem"}/></DropdownMenuTrigger>
+                            <DropdownMenuContent>
+                                <DropdownMenuLabel>Join a chat</DropdownMenuLabel>
+                                <DropdownMenuSeparator />
+                                    <div className="flex justify-center">
+                                        <Input type="text" className="w-40" placeholder="Room..."
+                                        onChange={(e) => room.current = e.target.value}/>
+                                    </div>
+                                <DropdownMenuItem>
+                                    <Button variant="outline" className="mt-2 w-40 text-white"
+                                    onClick={handleSubmit}>Join</Button>
+                                </DropdownMenuItem>
+                            </DropdownMenuContent>
+                        </DropdownMenu>
 
                         <Drawer direction={"right"} modal={false}>
                             <DrawerOverlay/>
@@ -579,8 +600,8 @@ export const KonvaCanvas = ({socket}: KonvaCanvasProps) => {
                         width={rectangle.width}
                         draggable={isDraggable}
                         onClick={onClick}
-                        onDragMove={handleDrag}
-                        onTransform={handleTransform}
+                        onDragEnd={handleDrag}
+                        onTransformEnd={handleTransform}
                         shape={rectangle.shape}/>
                     ))}
 
@@ -596,8 +617,8 @@ export const KonvaCanvas = ({socket}: KonvaCanvasProps) => {
                         draggable={isDraggable}
                         onClick={onClick}
                         shape={circle.shape}
-                        onDragMove={handleDrag}
-                        onTransform={handleTransform}/>
+                        onDragEnd={handleDrag}
+                        onTransformEnd={handleTransform}/>
                     ))}
 
                     {scribbles.map((scribble: ScribbleStruct, i) => (
@@ -616,8 +637,8 @@ export const KonvaCanvas = ({socket}: KonvaCanvasProps) => {
                         draggable={isDraggable}
                         onClick={onClick}
                         shape={scribble.shape}
-                        onDragMove={handleDrag}
-                        onTransform={handleTransform}
+                        onDragEnd={handleDrag}
+                        onTransformEnd={handleTransform}
                         />
                     ))}
 

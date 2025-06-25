@@ -3,5 +3,6 @@ export const ACTIONS = {
     RECTANGLE: "RECTANGLE",
     CIRCLE: "CIRCLE",
     SCRIBBLE: "SCRIBBLE",
-    ARROW: "ARROW"
+    ARROW: "ARROW",
+    ERASER: "ERASER"
 }
