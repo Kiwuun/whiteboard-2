@@ -10,6 +10,7 @@ import { BiDoorOpen } from "react-icons/bi";
 import { FaRegTrashCan } from "react-icons/fa6";
 import { IoIosClose } from "react-icons/io";
 import { LuEraser } from "react-icons/lu";
+import { IoChatbubblesSharp } from "react-icons/io5";
 
 import { Stage, Layer, Rect, Circle, Line, Transformer } from "react-konva"
 import { useEffect, useRef, useState } from "react"
@@ -62,12 +63,12 @@ import ChatBox from "./chat"
 import { isDynamicServerError } from "next/dist/client/components/hooks-server-context"
 
 // TODO:
-// ADD ERASER
 // ADD CHAT
 // ADD CHAT ROOM OPTIONS WITH PUBLIC / PRIVATE SETTINGS
 // ADD TEXT
 // ADD IMAGES
 // MAKE TOOL BAR SMALLER
+// ADD SOCKETS TO ERASER
 
 export const KonvaCanvas = ({socket}: KonvaCanvasProps) => {
 
@@ -119,6 +120,16 @@ export const KonvaCanvas = ({socket}: KonvaCanvasProps) => {
                 circles: circlesRef.current,
                 scribbles: scribblesRef.current
             })
+        }
+
+        const handleEraserClear = (data: any) => {
+            const ids = new Set(data)
+
+            setRectangles((prev) => prev.filter((rect) => !ids.has(rect.id)))
+            setCircles((prev) => prev.filter((circle) => !ids.has(circle.id)))
+            setScribbles((prev) => prev.filter((scribble) => !ids.has(scribble.id)))
+
+            console.log("Test")
         }
 
         const handleGetState = (data: any) => {
@@ -176,6 +187,7 @@ export const KonvaCanvas = ({socket}: KonvaCanvasProps) => {
         socket.on("get-state", handleSendState)
         socket.on("get-canvas-state", handleGetState)
         socket.on("clear-canvas", handleClear)
+        socket.on("clear-eraser", handleEraserClear)
 
         return () => {
             socket.off("get-shapes", handleGetShapes)
@@ -183,6 +195,7 @@ export const KonvaCanvas = ({socket}: KonvaCanvasProps) => {
             socket.off("get-state", handleSendState)
             socket.off("get-canvas-state", handleGetState)
             socket.off("clear-canvas", handleClear)
+            socket.off("clear-eraser", handleEraserClear)
         }
     }, [])
 
@@ -332,7 +345,7 @@ export const KonvaCanvas = ({socket}: KonvaCanvasProps) => {
 
                 break
                 }
-            }
+    }
 
     function onPointerUp () {
         isPainting.current = false
@@ -356,6 +369,8 @@ export const KonvaCanvas = ({socket}: KonvaCanvasProps) => {
                 setRectangles((prev) => prev.filter((rect) => !ids.has(rect.id)))
                 setCircles((prev) => prev.filter((circle) => !ids.has(circle.id)))
                 setScribbles((prev) => prev.filter((scribble) => !ids.has(scribble.id)))
+
+                socket.emit("clear-eraser-s", eraserStack.current)
                 
                 eraserStack.current = []
 
@@ -606,7 +621,9 @@ export const KonvaCanvas = ({socket}: KonvaCanvasProps) => {
 
                         <Drawer direction={"right"} modal={false}>
                             <DrawerOverlay/>
-                            <DrawerTrigger className="flex items-end">Open</DrawerTrigger>
+                            <DrawerTrigger className="flex items-end cursor-pointer hover:bg-slate-700 rounded">
+                                <IoChatbubblesSharp size={"2rem"}/>
+                            </DrawerTrigger>
                                 <DrawerContent className="border-none">
                                 <DrawerHeader className="flex items-end">
                                     <DrawerClose asChild={true}>
