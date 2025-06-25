@@ -9,6 +9,7 @@ import { FaRegCircle } from "react-icons/fa"
 import { BiDoorOpen } from "react-icons/bi";
 import { FaRegTrashCan } from "react-icons/fa6";
 import { IoIosClose } from "react-icons/io";
+import { LuEraser } from "react-icons/lu";
 
 import { Stage, Layer, Rect, Circle, Line, Transformer } from "react-konva"
 import { useEffect, useRef, useState } from "react"
@@ -58,12 +59,15 @@ import {
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import ChatBox from "./chat"
+import { isDynamicServerError } from "next/dist/client/components/hooks-server-context"
 
 // TODO:
-// SET BORDER AND COLLISION
 // ADD ERASER
 // ADD CHAT
 // ADD CHAT ROOM OPTIONS WITH PUBLIC / PRIVATE SETTINGS
+// ADD TEXT
+// ADD IMAGES
+// MAKE TOOL BAR SMALLER
 
 export const KonvaCanvas = ({socket}: KonvaCanvasProps) => {
 
@@ -73,14 +77,13 @@ export const KonvaCanvas = ({socket}: KonvaCanvasProps) => {
     const room = useRef<string>("")
     const [action, setAction] = useState(ACTIONS.SELECT)
     const [strokeSize, setStrokeSize] = useState<number>(12)
-    const [popOpen, setPopOpen] = useState<boolean>(false)
-    const [drawer, setDrawer] = useState<boolean>(false)
     const [windowDimensions, setWindowDimensions] = useState({width: 0, height: 0})
 
     const isDraggable = action === ACTIONS.SELECT
 
     const isPainting = useRef(false)
     const currentShapeID = useRef<string>(null)
+    const eraserStack = useRef<string[]>([])
 
     // SHAPES
     const[rectangles, setRectangles] = useState<RectangleStruct[]>([])
@@ -185,10 +188,6 @@ export const KonvaCanvas = ({socket}: KonvaCanvasProps) => {
 
     // HANDLE FUNCTIONS
 
-    function checkBorderCollision () {
-
-    }
-
     function handleOnPointerDown (e: Konva.KonvaEventObject<MouseEvent>) {
         if(e.target === e.target.getStage()) {
             transFormerRef.current!.nodes([])
@@ -201,12 +200,14 @@ export const KonvaCanvas = ({socket}: KonvaCanvasProps) => {
     function onPointerDown () {
         if(action === ACTIONS.SELECT) return
 
-        const stage = stageRef.current
+       const stage = stageRef.current
         if(!stage) return
 
         const pointerPos = stage.getPointerPosition()
+        if(!pointerPos) return
 
-        const {x, y} = pointerPos!
+        const {x, y} = pointerPos
+        
         const id = uuid()
 
         currentShapeID.current = id
@@ -215,18 +216,18 @@ export const KonvaCanvas = ({socket}: KonvaCanvasProps) => {
         switch(action) {
             case ACTIONS.RECTANGLE:
                 setRectangles((rectangles) => [...rectangles, {
-                    id, angle: 0, shape: ACTIONS.RECTANGLE, x, y, height: 20, width: 20, fillColor: fillColor.current
+                    id, angle: 0, shape: ACTIONS.RECTANGLE, x, y, height: 20, width: 20, fillColor: fillColor.current, opacity: 1
                 }])
                 break;
             case ACTIONS.CIRCLE:
                 setCircles((circles) => [...circles, {
-                    id, shape: ACTIONS.CIRCLE, radius: 20, x, y, fillColor: fillColor.current
+                    id, shape: ACTIONS.CIRCLE, radius: 20, x, y, fillColor: fillColor.current, opacity: 1
                 }])
                 break;
             case ACTIONS.SCRIBBLE:
                 // ADD NEW SCRIBLE WHEN SCRIBBLE AND MOUSE DOWN
                 setScribbles((scribbles) => [...scribbles, {
-                    id, shape: ACTIONS.SCRIBBLE, points: [x, y], fillColor: fillColor.current, x: 0, y: 0, angle: 0, stroke: strokeSize
+                    id, shape: ACTIONS.SCRIBBLE, points: [x, y], fillColor: fillColor.current, x: 0, y: 0, angle: 0, stroke: strokeSize, opacity: 1
                 }])
 
                 setScribbles((scribbles) =>scribbles.map((scribble) => {
@@ -240,6 +241,13 @@ export const KonvaCanvas = ({socket}: KonvaCanvasProps) => {
                     return scribble;
                 }))
                 break
+            case ACTIONS.ERASER:
+                const shape = stage.getIntersection(pointerPos)
+                const id = shape?.attrs.id
+                if(eraserStack.current.includes(id) || id === undefined) return
+                eraserStack.current.push(id)
+                console.log(eraserStack.current)
+                break
         }
     }
 
@@ -250,8 +258,9 @@ export const KonvaCanvas = ({socket}: KonvaCanvasProps) => {
         if(!stage) return
 
         const pointerPos = stage.getPointerPosition()
+        if(!pointerPos) return
 
-        const {x, y} = pointerPos!
+        const {x, y} = pointerPos
 
         switch(action) {
             case ACTIONS.RECTANGLE:
@@ -287,7 +296,41 @@ export const KonvaCanvas = ({socket}: KonvaCanvasProps) => {
                         : scribble
                 )
             );
-            break;
+                break;
+            case ACTIONS.ERASER:
+                const shape = stage.getIntersection(pointerPos)
+                const id = shape?.attrs.id
+                const s = shape?.attrs.shape
+                if(eraserStack.current.includes(id) || id === undefined) return
+                eraserStack.current.push(id)
+
+                const idsToErase = new Set(eraserStack.current)
+
+                switch(s) {
+                    case ACTIONS.RECTANGLE:
+                        setRectangles((prev) =>
+                            prev.map((rect) =>
+                                idsToErase.has(rect.id) ? { ...rect, opacity: 0.1 } : rect
+                            )
+                        )
+                        break
+                    case ACTIONS.CIRCLE:
+                        setCircles((prev) =>
+                            prev.map((circle) =>
+                                idsToErase.has(circle.id) ? { ...circle, opacity: 0.1 } : circle
+                            )
+                        )
+                        break
+                    case ACTIONS.SCRIBBLE:
+                        setScribbles((prev) =>
+                            prev.map((scribble) =>
+                                idsToErase.has(scribble.id) ? { ...scribble, opacity: 0.1 } : scribble
+                            )
+                        )
+                        break
+                }
+
+                break
                 }
             }
 
@@ -306,6 +349,16 @@ export const KonvaCanvas = ({socket}: KonvaCanvasProps) => {
             case ACTIONS.SCRIBBLE:
                 const scribble = scribbles.find(scrib => scrib.id === currentShapeID.current)
                 if(scribble) socket.emit("canvas-input", scribble)
+                break
+            case ACTIONS.ERASER:
+                const ids = new Set(eraserStack.current)
+
+                setRectangles((prev) => prev.filter((rect) => !ids.has(rect.id)))
+                setCircles((prev) => prev.filter((circle) => !ids.has(circle.id)))
+                setScribbles((prev) => prev.filter((scribble) => !ids.has(scribble.id)))
+                
+                eraserStack.current = []
+
                 break
         }
 
@@ -459,7 +512,6 @@ export const KonvaCanvas = ({socket}: KonvaCanvasProps) => {
     function handleSubmit () {
         socket.emit("join-room", room.current)
         socket.emit("client-ready")
-        setPopOpen(false)
     }
 
     return (
@@ -486,6 +538,10 @@ export const KonvaCanvas = ({socket}: KonvaCanvasProps) => {
 
                         <ToolButton setAction={setAction} Action={action} Tool={ACTIONS.SCRIBBLE}>
                             <LuPencil size={"2rem"}/>
+                        </ToolButton>
+
+                        <ToolButton setAction={setAction} Action={action} Tool={ACTIONS.ERASER}>
+                            <LuEraser size={"2rem"}/>
                         </ToolButton>
 
                         <AlertDialog>
@@ -533,7 +589,7 @@ export const KonvaCanvas = ({socket}: KonvaCanvasProps) => {
                         </Popover> */}
 
                         <DropdownMenu>
-                            <DropdownMenuTrigger className="p-1 cursor-pointer hover:bg-slate-700 rounded"><BiDoorOpen size={"2rem"}/></DropdownMenuTrigger>
+                            <DropdownMenuTrigger asChild className="p-1 cursor-pointer hover:bg-slate-700 rounded"><BiDoorOpen size={"2.5rem"}/></DropdownMenuTrigger>
                             <DropdownMenuContent>
                                 <DropdownMenuLabel>Join a chat</DropdownMenuLabel>
                                 <DropdownMenuSeparator />
@@ -561,7 +617,6 @@ export const KonvaCanvas = ({socket}: KonvaCanvasProps) => {
                                 <ChatBox socket={socket}/>
                             </DrawerContent>
                         </Drawer>
-
                     </div>
                 </div>
 
@@ -588,13 +643,14 @@ export const KonvaCanvas = ({socket}: KonvaCanvasProps) => {
                 <Layer>
                     {rectangles.map((rectangle: RectangleStruct, i) => (
                         <Rect
-                        cornerRadius={15}
+                        // cornerRadius={15}
                         key={i}
                         id={rectangle.id}
                         rotation={rectangle.angle}
                         x={rectangle.x}
                         y={rectangle.y}
                         strokeWidth={2}
+                        opacity={rectangle.opacity}
                         fill={rectangle.fillColor}
                         height={rectangle.height}
                         width={rectangle.width}
@@ -613,6 +669,7 @@ export const KonvaCanvas = ({socket}: KonvaCanvasProps) => {
                         y={circle.y}
                         radius={circle.radius}
                         strokeWidth={2}
+                        opacity={circle.opacity}
                         fill={circle.fillColor}
                         draggable={isDraggable}
                         onClick={onClick}
@@ -633,6 +690,7 @@ export const KonvaCanvas = ({socket}: KonvaCanvasProps) => {
                         stroke={scribble.fillColor}
                         strokeWidth={scribble.stroke}
                         fill={scribble.fillColor}
+                        opacity={scribble.opacity}
                         rotation={scribble.angle}
                         draggable={isDraggable}
                         onClick={onClick}

@@ -16,6 +16,7 @@ export type RectangleStruct = {
     height: number, 
     width: number,
     fillColor: string,
+    opacity: number
 }
 
 export type CircleStruct = {
@@ -24,7 +25,8 @@ export type CircleStruct = {
     radius: number,
     x: number,
     y: number,
-    fillColor: string
+    fillColor: string,
+    opacity: number
 }
 
 export type ScribbleStruct = {
@@ -35,7 +37,8 @@ export type ScribbleStruct = {
     x: number, 
     y: number,
     angle: number,
-    stroke: number
+    stroke: number,
+    opacity: number
 }
 
 export type KonvaCanvasProps = {
@@ -44,4 +47,9 @@ export type KonvaCanvasProps = {
 
 export type CanvasSocketProps = {
   socket: Socket | null
+}
+
+export type EraserProps = {
+    id: string,
+    shape: string
 }
