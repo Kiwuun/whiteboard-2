@@ -11,14 +11,15 @@ import { FaRegTrashCan } from "react-icons/fa6";
 import { IoIosClose } from "react-icons/io";
 import { LuEraser } from "react-icons/lu";
 import { IoChatbubblesSharp } from "react-icons/io5";
+import { RxText } from "react-icons/rx";
 
-import { Stage, Layer, Rect, Circle, Line, Transformer } from "react-konva"
+import { Stage, Layer, Rect, Circle, Line, Transformer, Text } from "react-konva"
 import { useEffect, useRef, useState } from "react"
 import { ACTIONS } from "../types/consts"
 import { ToolButton } from "./tool-button"
 import { v4 as uuid } from "uuid"
 import Konva from "konva"
-import { RectangleStruct, CircleStruct, ScribbleStruct, KonvaCanvasProps } from "../types/typing"
+import { RectangleStruct, CircleStruct, ScribbleStruct, KonvaCanvasProps, TextStruct } from "../types/typing"
 import Stack from '@mui/material/Stack';
 import Slider from '@mui/material/Slider';
 import {
@@ -60,14 +61,15 @@ import {
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import ChatBox from "./chat"
-import { isDynamicServerError } from "next/dist/client/components/hooks-server-context"
 
 // TODO:
 // ADD CHAT
 // ADD CHAT ROOM OPTIONS WITH PUBLIC / PRIVATE SETTINGS
 // ADD TEXT
 // ADD IMAGES
-// MAKE TOOL BAR SMALLER
+// ADD LINE
+// UNDO / REDO
+// ADD CUSTOM POINTER FOR ERASER
 
 export const KonvaCanvas = ({socket}: KonvaCanvasProps) => {
 
@@ -89,11 +91,13 @@ export const KonvaCanvas = ({socket}: KonvaCanvasProps) => {
     const[rectangles, setRectangles] = useState<RectangleStruct[]>([])
     const[circles, setCircles] = useState<CircleStruct[]>([])
     const [scribbles, setScribbles] = useState<ScribbleStruct[]>([])
+    const [text, setText] = useState<TextStruct[]>([])
 
     // SHAPE REFS
     const rectanglesRef = useRef<RectangleStruct[]>([])
     const circlesRef = useRef<CircleStruct[]>([])
     const scribblesRef = useRef<ScribbleStruct[]>([])
+    const textRef = useRef<TextStruct[]>([])
 
 
     // HANDLE PRELOADING ERROR: WINDOW NOT DEFINED
@@ -106,7 +110,8 @@ export const KonvaCanvas = ({socket}: KonvaCanvasProps) => {
         rectanglesRef.current = rectangles
         circlesRef.current = circles
         scribblesRef.current = scribbles
-    }, [rectangles, circles, scribbles])
+        textRef.current = text
+    }, [rectangles, circles, scribbles, text])
 
 
     // SOCKETS / HANDLE METHODS
@@ -127,8 +132,6 @@ export const KonvaCanvas = ({socket}: KonvaCanvasProps) => {
             setRectangles((prev) => prev.filter((rect) => !ids.has(rect.id)))
             setCircles((prev) => prev.filter((circle) => !ids.has(circle.id)))
             setScribbles((prev) => prev.filter((scribble) => !ids.has(scribble.id)))
-
-            console.log("Test")
         }
 
         const handleGetState = (data: any) => {
@@ -253,6 +256,11 @@ export const KonvaCanvas = ({socket}: KonvaCanvasProps) => {
                     return scribble;
                 }))
                 break
+            case ACTIONS.TEXT:
+                setText((texts) => [...texts, {
+                    id, angle: 0, shape: ACTIONS.TEXT, x, y, height: 20, width: 20, opacity: 1, text: "Placeholder"
+                }])
+                break;
             case ACTIONS.ERASER:
                 const shape = stage.getIntersection(pointerPos)
                 const id = shape?.attrs.id
@@ -471,6 +479,9 @@ export const KonvaCanvas = ({socket}: KonvaCanvasProps) => {
                                 )
                             );
 
+                shape.scaleX(1);
+                shape.scaleY(1); 
+
                 socket.emit("canvas-transform", rect)
                 break
             case ACTIONS.CIRCLE:
@@ -519,6 +530,10 @@ export const KonvaCanvas = ({socket}: KonvaCanvasProps) => {
         setCircles(() => [])
         setRectangles(() => [])
         setScribbles(() => [])
+        setText(() => [])
+
+        if(!transFormerRef) return
+        transFormerRef.current!.nodes([])
 
         socket.emit("clear-canvas-s")
     }
@@ -552,6 +567,10 @@ export const KonvaCanvas = ({socket}: KonvaCanvasProps) => {
 
                         <ToolButton setAction={setAction} Action={action} Tool={ACTIONS.SCRIBBLE}>
                             <LuPencil size={"1.5rem"}/>
+                        </ToolButton>
+
+                        <ToolButton setAction={setAction} Action={action} Tool={ACTIONS.TEXT}>
+                            <RxText style={{fontSize: "1.5rem"}}/>
                         </ToolButton>
 
                         <ToolButton setAction={setAction} Action={action} Tool={ACTIONS.ERASER}>
@@ -615,7 +634,7 @@ export const KonvaCanvas = ({socket}: KonvaCanvasProps) => {
                                 <DropdownMenuSeparator />
                                     <div className="flex justify-center">
                                         <Input type="text" className="w-40" placeholder="Room..."
-                                        onChange={(e) => room.current = e.target.value}/>
+                                        onChange={(e) => room.current = e.target.value} autoFocus/>
                                     </div>
                                 <DropdownMenuItem>
                                     <Button variant="outline" className="mt-2 w-40 text-white"
@@ -720,6 +739,18 @@ export const KonvaCanvas = ({socket}: KonvaCanvasProps) => {
                         onDragEnd={handleDrag}
                         onTransformEnd={handleTransform}
                         />
+                    ))}
+
+                    {text.map((text: TextStruct, i) => (
+                        <Text
+                        key={i}
+                        x={text.x}
+                        y={text.y}
+                        shape={text.shape}
+                        text={text.text}
+                        fill={"white"}
+                        draggable={isDraggable}
+                        onClick={onClick}/>
                     ))}
 
                     <Transformer 

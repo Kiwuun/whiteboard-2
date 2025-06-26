@@ -41,6 +41,18 @@ export type ScribbleStruct = {
     opacity: number
 }
 
+export type TextStruct = {
+    id: string,
+    shape: string,
+    angle: number,
+    x: number,
+    y: number,
+    height: number, 
+    width: number,
+    opacity: number,
+    text: string
+}
+
 export type KonvaCanvasProps = {
     socket: Socket | null
 }
