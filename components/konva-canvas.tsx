@@ -6,7 +6,7 @@ import { FaLongArrowAltRight } from "react-icons/fa"
 import { LuPencil } from "react-icons/lu"
 import { GiArrowCursor } from "react-icons/gi"
 import { FaRegCircle } from "react-icons/fa"
-import { BiDoorOpen } from "react-icons/bi";
+import { FaDoorOpen } from "react-icons/fa6";
 import { FaRegTrashCan } from "react-icons/fa6";
 import { IoIosClose } from "react-icons/io";
 import { LuEraser } from "react-icons/lu";
@@ -68,7 +68,6 @@ import { isDynamicServerError } from "next/dist/client/components/hooks-server-c
 // ADD TEXT
 // ADD IMAGES
 // MAKE TOOL BAR SMALLER
-// ADD SOCKETS TO ERASER
 
 export const KonvaCanvas = ({socket}: KonvaCanvasProps) => {
 
@@ -532,35 +531,37 @@ export const KonvaCanvas = ({socket}: KonvaCanvasProps) => {
     return (
         <>
             <div className="relative w-full h-screen overflow-hidden">
-                <div className="abolute top-0 z-10 w-full py-2">
-                    <div className="flex justify-center items-center gap-3 py-2 px-3 w-fit mx-auto">
+                <div className="abolute top-0 z-15 w-full py-2">
+                    <div className="flex justify-center items-center gap-3 py-1 px-3 w-fit mx-auto bg-slate-700/30 rounded-lg">
 
                         <ToolButton setAction={setAction} Action={action} Tool={ACTIONS.SELECT}>
-                            <GiArrowCursor size={"2rem"}/>
+                            <GiArrowCursor size={"1.25rem"}/>
                         </ToolButton>
 
                         <ToolButton setAction={setAction} Action={action} Tool={ACTIONS.RECTANGLE}>
-                            <TbRectangle size={"2rem"}/>
+                            <TbRectangle size={"1.5rem"}/>
                         </ToolButton>
 
                         <ToolButton setAction={setAction} Action={action} Tool={ACTIONS.CIRCLE}>
-                            <FaRegCircle size={"2rem"}/>
+                            <FaRegCircle size={"1.25rem"}/>
                         </ToolButton>
                         
                         <ToolButton setAction={setAction} Action={action} Tool={ACTIONS.ARROW}>
-                            <FaLongArrowAltRight size={"2rem"}/>
+                            <FaLongArrowAltRight size={"1.5rem"}/>
                         </ToolButton>
 
                         <ToolButton setAction={setAction} Action={action} Tool={ACTIONS.SCRIBBLE}>
-                            <LuPencil size={"2rem"}/>
+                            <LuPencil size={"1.5rem"}/>
                         </ToolButton>
 
                         <ToolButton setAction={setAction} Action={action} Tool={ACTIONS.ERASER}>
-                            <LuEraser size={"2rem"}/>
+                            <LuEraser size={"1.25rem"}/>
                         </ToolButton>
 
                         <AlertDialog>
-                            <AlertDialogTrigger className="p-1 cursor-pointer hover:bg-slate-700 rounded"><FaRegTrashCan size={"2rem"}/></AlertDialogTrigger>
+                            <AlertDialogTrigger className="p-1 cursor-pointer hover:bg-slate-700/20 rounded w-10 h-10 flex items-center justify-center">
+                                <FaRegTrashCan size={"1.25rem"}/>
+                            </AlertDialogTrigger>
                             <AlertDialogContent className="border-none">
                                 <AlertDialogHeader>
                                 <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
@@ -575,18 +576,18 @@ export const KonvaCanvas = ({socket}: KonvaCanvasProps) => {
                             </AlertDialogContent>
                         </AlertDialog>
 
-                        <button>
+                        <button className="p-1 hover:bg-slate-700/20 cursor-pointer w-10 h-10 rounded">
                             <input 
-                            className="w-6 h-6 cursor-pointer hover:bg-slate-700 rounded" 
+                            className="w-6 h-6 rounded cursor-pointer" 
                             type="color"
                             value={fillColor.current} 
                             onChange={(e) => fillColor.current = e.target.value}/>
                         </button>
 
                         <button
-                        className="p-1 cursor-pointer hover:bg-slate-700 rounded"
+                        className="p-1 cursor-pointer hover:bg-slate-700/20 w-10 h-10 flex items-center justify-center rounded"
                         onClick={exportCanvas}>
-                            <IoMdDownload size={"2rem"}/>
+                            <IoMdDownload size={"1.5rem"}/>
                         </button>
 
                         {/* <Popover open={popOpen} onOpenChange={setPopOpen}>
@@ -604,7 +605,11 @@ export const KonvaCanvas = ({socket}: KonvaCanvasProps) => {
                         </Popover> */}
 
                         <DropdownMenu>
-                            <DropdownMenuTrigger asChild className="p-1 cursor-pointer hover:bg-slate-700 rounded"><BiDoorOpen size={"2.5rem"}/></DropdownMenuTrigger>
+                            <DropdownMenuTrigger asChild className="flex items-center justify-center">
+                                <button className="p-1 cursor-pointer hover:bg-slate-700/20 rounded w-10 h-10">
+                                    <FaDoorOpen size={"1.25rem"}/>
+                                </button>
+                            </DropdownMenuTrigger>
                             <DropdownMenuContent>
                                 <DropdownMenuLabel>Join a chat</DropdownMenuLabel>
                                 <DropdownMenuSeparator />
@@ -621,8 +626,8 @@ export const KonvaCanvas = ({socket}: KonvaCanvasProps) => {
 
                         <Drawer direction={"right"} modal={false}>
                             <DrawerOverlay/>
-                            <DrawerTrigger className="flex items-end cursor-pointer hover:bg-slate-700 rounded">
-                                <IoChatbubblesSharp size={"2rem"}/>
+                            <DrawerTrigger className="p-1 flex items-center justify-center cursor-pointer hover:bg-slate-700 rounded w-10 h-10">
+                                <IoChatbubblesSharp size={"1.25rem"}/>
                             </DrawerTrigger>
                                 <DrawerContent className="border-none">
                                 <DrawerHeader className="flex items-end">
@@ -640,7 +645,7 @@ export const KonvaCanvas = ({socket}: KonvaCanvasProps) => {
 
             {/* STROKE SLIDER */}
             <Stack 
-            sx={{ height: 300, pointerEvents: "none", transform: "translateY(-50%) translateX(200%)", top: "50%", position: "fixed", zIndex: 5}} 
+            sx={{ height: 300, pointerEvents: "none", transform: "translateY(-50%) translateX(200%)", top: "50%", position: "fixed", zIndex: 12}} 
             spacing={1}>
                 <Slider
                 sx={{pointerEvents: "auto", color: "white"}}
