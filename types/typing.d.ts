@@ -57,11 +57,21 @@ export type KonvaCanvasProps = {
     socket: Socket | null
 }
 
-export type CanvasSocketProps = {
-  socket: Socket | null
+export type CanvasProps = {
+  socket: Socket | null,
+  username: string,
+  setMessage: React.Dispatch<React.SetStateAction<ChatMessage[]>>,
+  messages: ChatMessage[]
 }
 
 export type EraserProps = {
     id: string,
     shape: string
+}
+
+export type ChatMessage = {
+    id: string,
+    message: string,
+    date: Date,
+    username: string
 }

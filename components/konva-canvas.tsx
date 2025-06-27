@@ -19,7 +19,7 @@ import { ACTIONS } from "../types/consts"
 import { ToolButton } from "./tool-button"
 import { v4 as uuid } from "uuid"
 import Konva from "konva"
-import { RectangleStruct, CircleStruct, ScribbleStruct, KonvaCanvasProps, TextStruct } from "../types/typing"
+import { RectangleStruct, CircleStruct, ScribbleStruct, KonvaCanvasProps, TextStruct, ChatMessage } from "../types/typing"
 import Stack from '@mui/material/Stack';
 import Slider from '@mui/material/Slider';
 import {
@@ -65,18 +65,22 @@ import ChatBox from "./chat"
 // TODO:
 // ADD CHAT
 // ADD CHAT ROOM OPTIONS WITH PUBLIC / PRIVATE SETTINGS
-// ADD TEXT
 // ADD IMAGES
 // ADD LINE
 // UNDO / REDO
 // ADD CUSTOM POINTER FOR ERASER
+// ADD WIDTH AND HEIGHT FOR CIRCLE
+// MAYBE FIGURE OUT TEXT HARDER THAN I THOUGHT
+// ADD TEXT
 
 export const KonvaCanvas = ({socket}: KonvaCanvasProps) => {
 
     const stageRef = useRef<Konva.Stage>(null)
     const transFormerRef = useRef<Konva.Transformer>(null)
     const fillColor = useRef<string>("#ffffff")
+    const username = useRef<string>("")
     const room = useRef<string>("")
+    const [joinedRoom, setJoinedRoom] = useState<boolean>(false)
     const [action, setAction] = useState(ACTIONS.SELECT)
     const [strokeSize, setStrokeSize] = useState<number>(12)
     const [windowDimensions, setWindowDimensions] = useState({width: 0, height: 0})
@@ -98,6 +102,10 @@ export const KonvaCanvas = ({socket}: KonvaCanvasProps) => {
     const circlesRef = useRef<CircleStruct[]>([])
     const scribblesRef = useRef<ScribbleStruct[]>([])
     const textRef = useRef<TextStruct[]>([])
+    const messagesRef = useRef<ChatMessage[]>([])
+
+    // CHAT STATES
+    const [messages, setMessages] = useState<ChatMessage[]>([])
 
 
     // HANDLE PRELOADING ERROR: WINDOW NOT DEFINED
@@ -110,9 +118,24 @@ export const KonvaCanvas = ({socket}: KonvaCanvasProps) => {
         rectanglesRef.current = rectangles
         circlesRef.current = circles
         scribblesRef.current = scribbles
-        textRef.current = text
-    }, [rectangles, circles, scribbles, text])
+        textRef.current = text,
+        messagesRef.current = messages
+    }, [rectangles, circles, scribbles, text, messages])
 
+    useEffect(() => {
+        const handler = (data: ChatMessage) => {
+            if (!data) return
+            console.log("test")
+            setMessages(prev => [...prev, data])
+        }
+        
+
+        socket.on("getChatMessage", handler)
+
+        return () => {
+            socket.off("getChatMessage", handler)
+        }
+    }, [socket])
 
     // SOCKETS / HANDLE METHODS
     useEffect(() => {
@@ -122,7 +145,8 @@ export const KonvaCanvas = ({socket}: KonvaCanvasProps) => {
             socket.emit("canvas-state", {
                 rectangles: rectanglesRef.current,
                 circles: circlesRef.current,
-                scribbles: scribblesRef.current
+                scribbles: scribblesRef.current,
+                messages: messagesRef.current
             })
         }
 
@@ -138,6 +162,7 @@ export const KonvaCanvas = ({socket}: KonvaCanvasProps) => {
             setRectangles((prev) => [...prev, ...data.rectangles])
             setCircles((prev) => [...prev, ...data.circles])
             setScribbles((prev) => [...prev, ...data.scribbles])
+            setMessages((prev) => [...prev, ...data.messages])
         }
 
         const handleGetShapes = (data: any) => {
@@ -532,6 +557,7 @@ export const KonvaCanvas = ({socket}: KonvaCanvasProps) => {
         setScribbles(() => [])
         setText(() => [])
 
+        // REMOVE TRANSFORM WHEN A SHAPE IS REMOVED
         if(!transFormerRef) return
         transFormerRef.current!.nodes([])
 
@@ -539,6 +565,8 @@ export const KonvaCanvas = ({socket}: KonvaCanvasProps) => {
     }
 
     function handleSubmit () {
+        setJoinedRoom(true)
+
         socket.emit("join-room", room.current)
         socket.emit("client-ready")
     }
@@ -636,28 +664,34 @@ export const KonvaCanvas = ({socket}: KonvaCanvasProps) => {
                                         <Input type="text" className="w-40" placeholder="Room..."
                                         onChange={(e) => room.current = e.target.value} autoFocus/>
                                     </div>
+                                    <div className="flex justify-center mt-2">
+                                        <Input type="text" className="w-40" placeholder="Username..."
+                                        onChange={(e) => username.current = e.target.value}/>
+                                    </div>
                                 <DropdownMenuItem>
-                                    <Button variant="outline" className="mt-2 w-40 text-white"
+                                    <Button variant="outline" className="mt-1 w-40 text-white"
                                     onClick={handleSubmit}>Join</Button>
                                 </DropdownMenuItem>
                             </DropdownMenuContent>
                         </DropdownMenu>
 
-                        <Drawer direction={"right"} modal={false}>
+                        {joinedRoom && (
+                            <Drawer direction={"right"} modal={false}>
                             <DrawerOverlay/>
-                            <DrawerTrigger className="p-1 flex items-center justify-center cursor-pointer hover:bg-slate-700 rounded w-10 h-10">
+                            <DrawerTrigger className="p-1 flex items-center justify-center cursor-pointer hover:bg-slate-700/20 rounded w-10 h-10">
                                 <IoChatbubblesSharp size={"1.25rem"}/>
                             </DrawerTrigger>
-                                <DrawerContent className="border-none">
+                                <DrawerContent className="border-none translate-y-1/8">
                                 <DrawerHeader className="flex items-end">
                                     <DrawerClose asChild={true}>
                                         <Button variant="outline" className="w-[40px]"><IoIosClose /></Button>
                                     </DrawerClose>
                                 <DrawerTitle></DrawerTitle>
                                 </DrawerHeader>
-                                <ChatBox socket={socket}/>
+                                <ChatBox socket={socket} username={username.current} setMessage={setMessages} messages={messages}/>
                             </DrawerContent>
                         </Drawer>
+                        )}
                     </div>
                 </div>
 
@@ -681,6 +715,7 @@ export const KonvaCanvas = ({socket}: KonvaCanvasProps) => {
             onPointerDown={handleOnPointerDown}
             onPointerMove={onPointerMove}
             onPointerUp={onPointerUp}>
+                
                 <Layer>
                     {rectangles.map((rectangle: RectangleStruct, i) => (
                         <Rect
@@ -747,6 +782,7 @@ export const KonvaCanvas = ({socket}: KonvaCanvasProps) => {
                         x={text.x}
                         y={text.y}
                         shape={text.shape}
+                        fontStyle={"italic"}
                         text={text.text}
                         fill={"white"}
                         draggable={isDraggable}
