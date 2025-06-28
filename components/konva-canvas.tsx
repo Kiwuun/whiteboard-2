@@ -63,15 +63,12 @@ import { Button } from "@/components/ui/button"
 import ChatBox from "./chat"
 
 // TODO:
-// ADD CHAT
-// ADD CHAT ROOM OPTIONS WITH PUBLIC / PRIVATE SETTINGS
 // ADD IMAGES
 // ADD LINE
 // UNDO / REDO
 // ADD CUSTOM POINTER FOR ERASER
 // ADD WIDTH AND HEIGHT FOR CIRCLE
 // MAYBE FIGURE OUT TEXT HARDER THAN I THOUGHT
-// ADD TEXT
 
 export const KonvaCanvas = ({socket}: KonvaCanvasProps) => {
 
@@ -589,9 +586,9 @@ export const KonvaCanvas = ({socket}: KonvaCanvasProps) => {
                             <FaRegCircle size={"1.25rem"}/>
                         </ToolButton>
                         
-                        <ToolButton setAction={setAction} Action={action} Tool={ACTIONS.ARROW}>
+                        {/* <ToolButton setAction={setAction} Action={action} Tool={ACTIONS.ARROW}>
                             <FaLongArrowAltRight size={"1.5rem"}/>
-                        </ToolButton>
+                        </ToolButton> */}
 
                         <ToolButton setAction={setAction} Action={action} Tool={ACTIONS.SCRIBBLE}>
                             <LuPencil size={"1.5rem"}/>
